@@ -111,10 +111,12 @@ struct SessionDiagnostics: Codable, Equatable {
     }
 
     func validationResult(fileExistsAndNonEmpty: (String) -> Bool) -> ValidationResult {
+        let outputDirectory = URL(fileURLWithPath: recording.outputDirectory, isDirectory: true)
+
         let checks = ValidationChecks(
-            systemFileNonEmpty: fileExistsAndNonEmpty(tracks.system.path),
-            micFileNonEmpty: fileExistsAndNonEmpty(tracks.microphone.path),
-            mixedFileNonEmpty: fileExistsAndNonEmpty(tracks.mixed.path),
+            systemFileNonEmpty: fileExistsAndNonEmpty(outputDirectory.appendingPathComponent(tracks.system.path).path),
+            micFileNonEmpty: fileExistsAndNonEmpty(outputDirectory.appendingPathComponent(tracks.microphone.path).path),
+            mixedFileNonEmpty: fileExistsAndNonEmpty(outputDirectory.appendingPathComponent(tracks.mixed.path).path),
             systemBuffersPresent: tracks.system.bufferCount > 0,
             micBuffersPresent: tracks.microphone.bufferCount > 0
         )
