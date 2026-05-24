@@ -2,11 +2,12 @@ import AVFoundation
 import CoreMedia
 import ScreenCaptureKit
 
-final class CaptureOutputRouter: NSObject, SCStreamOutput, @unchecked Sendable {
+final class CaptureOutputRouter: NSObject, SCStreamOutput {
     private let systemWriter: AudioTrackWriter
     private let micWriter: AudioTrackWriter
-    private let queue = DispatchQueue(label: "BabyRecorder.CaptureOutputRouter")
     private var writeFailures: [AppErrorRecord] = []
+
+    let sampleQueue = DispatchQueue(label: "BabyRecorder.CaptureOutputRouter")
 
     init(systemWriter: AudioTrackWriter, micWriter: AudioTrackWriter) {
         self.systemWriter = systemWriter
@@ -14,59 +15,55 @@ final class CaptureOutputRouter: NSObject, SCStreamOutput, @unchecked Sendable {
     }
 
     var recordedWriteFailures: [AppErrorRecord] {
-        queue.sync {
+        sampleQueue.sync {
             writeFailures
         }
     }
 
     func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of outputType: SCStreamOutputType) {
         guard sampleBuffer.isValid else {
+            recordWriteFailure(CaptureOutputRouterError.invalidSampleBuffer, outputType: outputType)
             return
         }
 
-        let routedBuffer: RoutedAudioBuffer
         do {
-            guard let pcm = try Self.makePCMBuffer(from: sampleBuffer) else {
-                return
+            let pcm = try Self.makePCMBuffer(from: sampleBuffer)
+            let pts = sampleBuffer.presentationTimeStamp
+            switch outputType {
+            case .audio:
+                try systemWriter.write(buffer: pcm, pts: pts)
+            case .microphone:
+                try micWriter.write(buffer: pcm, pts: pts)
+            default:
+                break
             }
-            routedBuffer = RoutedAudioBuffer(pcm: pcm, pts: sampleBuffer.presentationTimeStamp, outputType: outputType)
         } catch {
-            queue.async {
-                self.recordWriteFailure(error, outputType: outputType)
-            }
-            return
-        }
-
-        queue.async {
-            do {
-                switch routedBuffer.outputType {
-                case .audio:
-                    try self.systemWriter.write(buffer: routedBuffer.pcm, pts: routedBuffer.pts)
-                case .microphone:
-                    try self.micWriter.write(buffer: routedBuffer.pcm, pts: routedBuffer.pts)
-                default:
-                    break
-                }
-            } catch {
-                self.recordWriteFailure(error, outputType: routedBuffer.outputType)
-            }
+            recordWriteFailure(error, outputType: outputType)
         }
     }
 
     func drain() {
-        queue.sync {}
+        sampleQueue.sync {}
     }
 
-    static func makePCMBuffer(from sampleBuffer: CMSampleBuffer) throws -> AVAudioPCMBuffer? {
-        guard let formatDescription = sampleBuffer.formatDescription,
-              let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription),
+    static func makePCMBuffer(from sampleBuffer: CMSampleBuffer) throws -> AVAudioPCMBuffer {
+        guard sampleBuffer.isValid else {
+            throw CaptureOutputRouterError.invalidSampleBuffer
+        }
+        guard let formatDescription = sampleBuffer.formatDescription else {
+            throw CaptureOutputRouterError.missingFormatDescription
+        }
+        guard let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription),
               let format = AVAudioFormat(streamDescription: streamDescription) else {
-            return nil
+            throw CaptureOutputRouterError.invalidAudioFormat
+        }
+        guard sampleBuffer.numSamples > 0 else {
+            throw CaptureOutputRouterError.emptySampleBuffer
         }
 
         let frameCount = AVAudioFrameCount(sampleBuffer.numSamples)
         guard let pcm = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
-            return nil
+            throw CaptureOutputRouterError.invalidAudioFormat
         }
 
         pcm.frameLength = frameCount
@@ -95,29 +92,33 @@ final class CaptureOutputRouter: NSObject, SCStreamOutput, @unchecked Sendable {
     }
 }
 
-private struct RoutedAudioBuffer: @unchecked Sendable {
-    let pcm: AVAudioPCMBuffer
-    let pts: CMTime
-    let outputType: SCStreamOutputType
-}
-
 private extension CMSampleBuffer {
     func copyPCMData(into pcm: AVAudioPCMBuffer) throws {
-        try withAudioBufferList { audioBufferList, _ in
+        try withAudioBufferList { audioBufferList, blockBuffer in
+            guard CMBlockBufferGetDataLength(blockBuffer) > 0 else {
+                throw CaptureOutputRouterError.missingAudioData
+            }
+
             let destinationBuffers = UnsafeMutableAudioBufferListPointer(pcm.mutableAudioBufferList)
-            guard audioBufferList.count <= destinationBuffers.count else {
+            guard audioBufferList.count == destinationBuffers.count else {
                 throw CaptureOutputRouterError.bufferCountMismatch(source: audioBufferList.count, destination: destinationBuffers.count)
             }
 
             for index in 0..<audioBufferList.count {
                 let sourceBuffer = audioBufferList[index]
                 let destinationBuffer = destinationBuffers[index]
-                let bytes = min(sourceBuffer.mDataByteSize, destinationBuffer.mDataByteSize)
-                guard bytes == 0 || (sourceBuffer.mData != nil && destinationBuffer.mData != nil) else {
+                guard sourceBuffer.mDataByteSize == destinationBuffer.mDataByteSize else {
+                    throw CaptureOutputRouterError.byteCountMismatch(
+                        bufferIndex: index,
+                        source: sourceBuffer.mDataByteSize,
+                        destination: destinationBuffer.mDataByteSize
+                    )
+                }
+                guard sourceBuffer.mDataByteSize == 0 || (sourceBuffer.mData != nil && destinationBuffer.mData != nil) else {
                     throw CaptureOutputRouterError.missingAudioData
                 }
-                if let source = sourceBuffer.mData, let destination = destinationBuffer.mData, bytes > 0 {
-                    memcpy(destination, source, Int(bytes))
+                if let source = sourceBuffer.mData, let destination = destinationBuffer.mData, sourceBuffer.mDataByteSize > 0 {
+                    memcpy(destination, source, Int(sourceBuffer.mDataByteSize))
                 }
             }
         }
@@ -125,13 +126,28 @@ private extension CMSampleBuffer {
 }
 
 private enum CaptureOutputRouterError: LocalizedError {
+    case invalidSampleBuffer
+    case missingFormatDescription
+    case invalidAudioFormat
+    case emptySampleBuffer
     case bufferCountMismatch(source: Int, destination: Int)
+    case byteCountMismatch(bufferIndex: Int, source: UInt32, destination: UInt32)
     case missingAudioData
 
     var errorDescription: String? {
         switch self {
+        case .invalidSampleBuffer:
+            "Sample buffer was invalid."
+        case .missingFormatDescription:
+            "Sample buffer was missing an audio format description."
+        case .invalidAudioFormat:
+            "Sample buffer audio format was invalid."
+        case .emptySampleBuffer:
+            "Sample buffer did not contain audio frames."
         case .bufferCountMismatch(let source, let destination):
             "Sample buffer has \(source) audio buffers, but PCM destination has \(destination)."
+        case .byteCountMismatch(let bufferIndex, let source, let destination):
+            "Sample buffer audio buffer \(bufferIndex) has \(source) bytes, but PCM destination has \(destination)."
         case .missingAudioData:
             "Sample buffer audio data was missing."
         }
