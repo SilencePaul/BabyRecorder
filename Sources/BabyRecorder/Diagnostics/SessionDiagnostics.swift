@@ -1,6 +1,6 @@
 import Foundation
 
-struct PermissionSnapshot: Codable, Equatable {
+struct PermissionSnapshot: Codable, Equatable, Sendable {
     var screenRecording: String
     var microphone: String
     var checkedAt: String
@@ -43,7 +43,7 @@ struct TrackGroupDiagnostics: Codable, Equatable {
     var mixed = MixedTrackDiagnostics(path: "mixed.wav")
 }
 
-struct ValidationChecks: Codable, Equatable {
+struct ValidationChecks: Codable, Equatable, Sendable {
     var systemFileNonEmpty: Bool
     var micFileNonEmpty: Bool
     var mixedFileNonEmpty: Bool
@@ -51,7 +51,7 @@ struct ValidationChecks: Codable, Equatable {
     var micBuffersPresent: Bool
 }
 
-struct ValidationResult: Codable, Equatable {
+struct ValidationResult: Codable, Equatable, Sendable {
     var passed: Bool
     var checks: ValidationChecks
 }
