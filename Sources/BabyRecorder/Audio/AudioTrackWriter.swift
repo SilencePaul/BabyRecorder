@@ -41,11 +41,17 @@ final class AudioTrackWriter {
             file = try AVAudioFile(forWriting: url, settings: buffer.format.settings)
         }
         try file?.write(from: buffer)
-        let bytes = Int64(buffer.frameLength) * Int64(buffer.format.streamDescription.pointee.mBytesPerFrame)
+        let bytes = Self.byteCount(for: buffer)
         stats.recordBuffer(frames: Int64(buffer.frameLength), bytes: bytes, pts: pts)
     }
 
     func close() {
         file = nil
+    }
+
+    private static func byteCount(for buffer: AVAudioPCMBuffer) -> Int64 {
+        UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList).reduce(0) { total, audioBuffer in
+            total + Int64(audioBuffer.mDataByteSize)
+        }
     }
 }
