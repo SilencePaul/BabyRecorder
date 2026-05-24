@@ -178,6 +178,7 @@ final class CaptureService: NSObject, CaptureServicing, SCStreamDelegate, @unche
         router.drain()
         var diagnostics = diagnostics
         diagnostics.errors.append(contentsOf: router.recordedWriteFailures)
+        diagnostics.errors.append(contentsOf: takeDelegateStopErrors())
         diagnostics.tracks.system = systemWriter.stats.asDiagnostics()
         diagnostics.tracks.microphone = micWriter.stats.asDiagnostics()
         systemWriter.close()
