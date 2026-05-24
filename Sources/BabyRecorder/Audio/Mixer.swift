@@ -82,12 +82,51 @@ struct Mixer {
             throw MixerError.unreadableInput(file.url.path)
         }
 
-        do {
-            try converter.convert(to: outputBuffer, from: sourceBuffer)
-        } catch {
+        let input = ConversionInput(buffer: sourceBuffer)
+        var conversionError: NSError?
+        let status = converter.convert(to: outputBuffer, error: &conversionError) { _, outStatus in
+            input.next(outStatus: outStatus)
+        }
+
+        guard conversionError == nil else {
+            throw MixerError.unreadableInput(file.url.path)
+        }
+        switch status {
+        case .haveData, .inputRanDry, .endOfStream:
+            break
+        case .error:
+            throw MixerError.unreadableInput(file.url.path)
+        @unknown default:
+            throw MixerError.unreadableInput(file.url.path)
+        }
+        guard sourceBuffer.frameLength == 0 || outputBuffer.frameLength > 0 else {
             throw MixerError.unreadableInput(file.url.path)
         }
 
         return outputBuffer
+    }
+}
+
+private final class ConversionInput: @unchecked Sendable {
+    private let buffer: AVAudioPCMBuffer
+    private let lock = NSLock()
+    private var hasProvidedBuffer = false
+
+    init(buffer: AVAudioPCMBuffer) {
+        self.buffer = buffer
+    }
+
+    func next(outStatus: UnsafeMutablePointer<AVAudioConverterInputStatus>) -> AVAudioBuffer? {
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard !hasProvidedBuffer else {
+            outStatus.pointee = .endOfStream
+            return nil
+        }
+
+        hasProvidedBuffer = true
+        outStatus.pointee = .haveData
+        return buffer
     }
 }
