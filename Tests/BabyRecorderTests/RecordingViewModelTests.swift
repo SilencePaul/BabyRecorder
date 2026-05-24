@@ -59,6 +59,24 @@ final class RecordingViewModelTests: XCTestCase {
         XCTAssertEqual(captureService.startCallCount, 1)
     }
 
+    func testCheckPermissionsWhileRecordingPreservesRecordingStateAndDoesNotAllowSecondStart() async {
+        let captureService = FakeCaptureService()
+        let viewModel = await RecordingViewModel(permissionService: FakePermissionService(screen: true, mic: true), captureService: captureService)
+        await viewModel.checkPermissions()
+        await viewModel.startRecording()
+
+        await viewModel.checkPermissions()
+
+        let stateAfterCheck = await viewModel.state
+        XCTAssertEqual(stateAfterCheck, .recording)
+
+        await viewModel.startRecording()
+
+        let stateAfterSecondStart = await viewModel.state
+        XCTAssertEqual(stateAfterSecondStart, .recording)
+        XCTAssertEqual(captureService.startCallCount, 1)
+    }
+
     func testStopFromNonRecordingDoesNotCallCaptureAndPreservesState() async {
         let captureService = FakeCaptureService()
         let viewModel = await RecordingViewModel(permissionService: FakePermissionService(screen: true, mic: true), captureService: captureService)

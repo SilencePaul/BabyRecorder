@@ -44,9 +44,18 @@ final class RecordingViewModel: ObservableObject {
     }
 
     func checkPermissions() async {
-        state = .checkingPermissions
-        permissionStatus = await permissionService.checkPermissions()
-        state = permissionStatus.isReady ? .ready : .permissionsMissing
+        let preservesActiveState = state == .starting || state == .recording || state == .stopping
+        if !preservesActiveState {
+            state = .checkingPermissions
+        }
+
+        let status = await permissionService.checkPermissions()
+        permissionStatus = status
+        guard !preservesActiveState else {
+            return
+        }
+
+        state = status.isReady ? .ready : .permissionsMissing
     }
 
     func openSystemSettings() {
