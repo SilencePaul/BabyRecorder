@@ -63,6 +63,10 @@ final class RecordingViewModel: ObservableObject {
     }
 
     func startRecording() async {
+        guard state != .starting && state != .recording && state != .stopping else {
+            return
+        }
+
         guard state == .ready else {
             if !permissionStatus.isReady {
                 state = .permissionsMissing

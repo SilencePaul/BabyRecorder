@@ -77,6 +77,26 @@ final class RecordingViewModelTests: XCTestCase {
         XCTAssertEqual(captureService.startCallCount, 1)
     }
 
+    func testStartWhileRecordingWithMissingPermissionsPreservesRecordingState() async {
+        let permissionService = FakePermissionService(screen: true, mic: true)
+        let captureService = FakeCaptureService()
+        let viewModel = await RecordingViewModel(permissionService: permissionService, captureService: captureService)
+        await viewModel.checkPermissions()
+        await viewModel.startRecording()
+
+        permissionService.screen = false
+        await viewModel.checkPermissions()
+
+        let stateAfterCheck = await viewModel.state
+        XCTAssertEqual(stateAfterCheck, .recording)
+
+        await viewModel.startRecording()
+
+        let stateAfterSecondStart = await viewModel.state
+        XCTAssertEqual(stateAfterSecondStart, .recording)
+        XCTAssertEqual(captureService.startCallCount, 1)
+    }
+
     func testStopFromNonRecordingDoesNotCallCaptureAndPreservesState() async {
         let captureService = FakeCaptureService()
         let viewModel = await RecordingViewModel(permissionService: FakePermissionService(screen: true, mic: true), captureService: captureService)
@@ -143,9 +163,14 @@ final class RecordingViewModelTests: XCTestCase {
     }
 }
 
-private struct FakePermissionService: PermissionServicing {
+private final class FakePermissionService: PermissionServicing, @unchecked Sendable {
     var screen: Bool
     var mic: Bool
+
+    init(screen: Bool, mic: Bool) {
+        self.screen = screen
+        self.mic = mic
+    }
 
     func checkPermissions() async -> PermissionStatus {
         PermissionStatus(screenRecordingGranted: screen, microphoneGranted: mic)
