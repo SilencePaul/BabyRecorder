@@ -77,30 +77,70 @@ struct Mixer {
         }
 
         let ratio = outputFormat.sampleRate / sourceFormat.sampleRate
-        let outputFrameCapacity = AVAudioFrameCount(Double(sourceBuffer.frameLength) * ratio) + 1_024
-        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: outputFrameCapacity) else {
-            throw MixerError.unreadableInput(file.url.path)
-        }
-
+        let expectedFrameCount = AVAudioFrameCount((Double(sourceBuffer.frameLength) * ratio).rounded(.toNearestOrAwayFromZero))
+        let chunkFrameCapacity = max(AVAudioFrameCount(1), min(expectedFrameCount + 1_024, 4_096))
         let input = ConversionInput(buffer: sourceBuffer)
-        var conversionError: NSError?
-        let status = converter.convert(to: outputBuffer, error: &conversionError) { _, outStatus in
-            input.next(outStatus: outStatus)
+        var chunks: [AVAudioPCMBuffer] = []
+        var totalFrameCount: AVAudioFrameCount = 0
+        var didReachEndOfStream = false
+        let maxIterations = max(8, Int(expectedFrameCount / chunkFrameCapacity) + 8)
+
+        for _ in 0..<maxIterations {
+            guard let chunk = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: chunkFrameCapacity) else {
+                throw MixerError.unreadableInput(file.url.path)
+            }
+
+            var conversionError: NSError?
+            let status = converter.convert(to: chunk, error: &conversionError) { _, outStatus in
+                input.next(outStatus: outStatus)
+            }
+
+            guard conversionError == nil else {
+                throw MixerError.unreadableInput(file.url.path)
+            }
+            if chunk.frameLength > 0 {
+                totalFrameCount += chunk.frameLength
+                chunks.append(chunk)
+            }
+
+            switch status {
+            case .haveData, .inputRanDry:
+                guard chunk.frameLength > 0 || status == .inputRanDry else {
+                    throw MixerError.unreadableInput(file.url.path)
+                }
+                continue
+            case .endOfStream:
+                didReachEndOfStream = true
+            case .error:
+                throw MixerError.unreadableInput(file.url.path)
+            @unknown default:
+                throw MixerError.unreadableInput(file.url.path)
+            }
+            break
         }
 
-        guard conversionError == nil else {
+        guard didReachEndOfStream else {
             throw MixerError.unreadableInput(file.url.path)
         }
-        switch status {
-        case .haveData, .inputRanDry, .endOfStream:
-            break
-        case .error:
-            throw MixerError.unreadableInput(file.url.path)
-        @unknown default:
+        guard sourceBuffer.frameLength == 0 || totalFrameCount > 0 else {
             throw MixerError.unreadableInput(file.url.path)
         }
-        guard sourceBuffer.frameLength == 0 || outputBuffer.frameLength > 0 else {
+        guard totalFrameCount >= expectedFrameCount || sourceBuffer.frameLength == 0 else {
             throw MixerError.unreadableInput(file.url.path)
+        }
+        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: totalFrameCount) else {
+            throw MixerError.unreadableInput(file.url.path)
+        }
+
+        outputBuffer.frameLength = totalFrameCount
+        var frameOffset = 0
+        for chunk in chunks {
+            for channel in 0..<Int(outputFormat.channelCount) {
+                let source = chunk.floatChannelData![channel]
+                let destination = outputBuffer.floatChannelData![channel] + frameOffset
+                destination.update(from: source, count: Int(chunk.frameLength))
+            }
+            frameOffset += Int(chunk.frameLength)
         }
 
         return outputBuffer

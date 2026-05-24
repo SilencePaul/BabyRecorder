@@ -56,13 +56,15 @@ final class MixerTests: XCTestCase {
         _ = try Mixer().mix(systemURL: a, microphoneURL: b, outputURL: out)
 
         let buffer = try TestAudio.readPCM(url: out)
-        let samples = buffer.floatChannelData![0]
         XCTAssertGreaterThan(buffer.frameLength, 0)
-        for index in 0..<Int(buffer.frameLength) {
-            XCTAssertLessThanOrEqual(samples[index], 1.0)
-            XCTAssertGreaterThanOrEqual(samples[index], -1.0)
+        for channel in 0..<Int(buffer.format.channelCount) {
+            let samples = buffer.floatChannelData![channel]
+            for index in 0..<Int(buffer.frameLength) {
+                XCTAssertLessThanOrEqual(samples[index], 1.0)
+                XCTAssertGreaterThanOrEqual(samples[index], -1.0)
+            }
+            XCTAssertEqual(samples[0], 1.0, accuracy: 0.0001)
         }
-        XCTAssertEqual(samples[0], 1.0, accuracy: 0.0001)
     }
 
     private func assertMixedOutputIs48kStereoAndAudible(_ url: URL) throws {
@@ -72,7 +74,7 @@ final class MixerTests: XCTestCase {
 
         let buffer = try TestAudio.readPCM(url: url)
         XCTAssertGreaterThan(buffer.frameLength, 0)
-        XCTAssertTrue(TestAudio.hasNonSilentSamples(buffer))
+        XCTAssertTrue(TestAudio.allChannelsHaveNonSilentSamples(buffer))
     }
 }
 
@@ -110,13 +112,18 @@ enum TestAudio {
         return buffer
     }
 
-    static func hasNonSilentSamples(_ buffer: AVAudioPCMBuffer) -> Bool {
+    static func allChannelsHaveNonSilentSamples(_ buffer: AVAudioPCMBuffer) -> Bool {
         for channel in 0..<Int(buffer.format.channelCount) {
             let samples = buffer.floatChannelData![channel]
+            var channelHasNonSilentSample = false
             for index in 0..<Int(buffer.frameLength) where abs(samples[index]) > 0.0001 {
-                return true
+                channelHasNonSilentSample = true
+                break
+            }
+            if !channelHasNonSilentSample {
+                return false
             }
         }
-        return false
+        return buffer.format.channelCount > 0
     }
 }
