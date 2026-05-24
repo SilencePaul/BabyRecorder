@@ -78,6 +78,7 @@ struct Mixer {
 
         let ratio = outputFormat.sampleRate / sourceFormat.sampleRate
         let expectedFrameCount = AVAudioFrameCount((Double(sourceBuffer.frameLength) * ratio).rounded(.toNearestOrAwayFromZero))
+        let minimumFrameCount = AVAudioFrameCount(max(0, floor(Double(sourceBuffer.frameLength) * ratio) - 1))
         let chunkFrameCapacity = max(AVAudioFrameCount(1), min(expectedFrameCount + 1_024, 4_096))
         let input = ConversionInput(buffer: sourceBuffer)
         var chunks: [AVAudioPCMBuffer] = []
@@ -125,7 +126,7 @@ struct Mixer {
         guard sourceBuffer.frameLength == 0 || totalFrameCount > 0 else {
             throw MixerError.unreadableInput(file.url.path)
         }
-        guard totalFrameCount >= expectedFrameCount || sourceBuffer.frameLength == 0 else {
+        guard totalFrameCount >= minimumFrameCount || sourceBuffer.frameLength == 0 else {
             throw MixerError.unreadableInput(file.url.path)
         }
         guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: totalFrameCount) else {

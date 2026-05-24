@@ -44,6 +44,20 @@ final class MixerTests: XCTestCase {
         try assertMixedOutputIs48kStereoAndAudible(out)
     }
 
+    func testResamplesNonRound44100HzFrameCount() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let a = dir.appendingPathComponent("a-100-frames.wav")
+        let b = dir.appendingPathComponent("b-100-frames.wav")
+        let out = dir.appendingPathComponent("mixed.wav")
+        try TestAudio.writeSineWave(url: a, frequency: 440, frameCount: 100, sampleRate: 44_100)
+        try TestAudio.writeSineWave(url: b, frequency: 660, frameCount: 100, sampleRate: 44_100)
+
+        _ = try Mixer().mix(systemURL: a, microphoneURL: b, outputURL: out)
+
+        try assertMixedOutputIs48kStereoAndAudible(out)
+    }
+
     func testClipsSummedSamplesToOne() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -80,8 +94,12 @@ final class MixerTests: XCTestCase {
 
 enum TestAudio {
     static func writeSineWave(url: URL, frequency: Double, duration: Double, sampleRate: Double = 48_000) throws {
-        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
         let frameCount = AVAudioFrameCount(sampleRate * duration)
+        try writeSineWave(url: url, frequency: frequency, frameCount: frameCount, sampleRate: sampleRate)
+    }
+
+    static func writeSineWave(url: URL, frequency: Double, frameCount: AVAudioFrameCount, sampleRate: Double) throws {
+        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
         let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)!
         buffer.frameLength = frameCount
         let samples = buffer.floatChannelData![0]
