@@ -3,6 +3,22 @@ import XCTest
 @testable import BabyRecorder
 
 final class PermissionServiceTests: XCTestCase {
+    func testUsesScreenRecordingAuthorizerWhenCheckingPermissions() async {
+        let screen = FakeScreenRecordingPermissionAuthorizer(granted: true)
+        let microphone = FakeMicrophonePermissionAuthorizer(status: .authorized, requestResult: false)
+        let service = PermissionService(
+            screenRecordingAuthorizer: screen,
+            microphoneAuthorizer: microphone,
+            openSettings: {}
+        )
+
+        let status = await service.checkPermissions()
+
+        XCTAssertTrue(status.screenRecordingGranted)
+        XCTAssertTrue(status.microphoneGranted)
+        XCTAssertEqual(screen.isGrantedCallCount, 1)
+    }
+
     func testRequestsMicrophoneAccessWhenStatusIsNotDetermined() async {
         let microphone = FakeMicrophonePermissionAuthorizer(status: .notDetermined, requestResult: true)
         let service = PermissionService(
@@ -31,6 +47,20 @@ final class PermissionServiceTests: XCTestCase {
         XCTAssertTrue(status.screenRecordingGranted)
         XCTAssertFalse(status.microphoneGranted)
         XCTAssertEqual(microphone.requestAccessCallCount, 0)
+    }
+}
+
+private final class FakeScreenRecordingPermissionAuthorizer: ScreenRecordingPermissionAuthorizing, @unchecked Sendable {
+    private let granted: Bool
+    private(set) var isGrantedCallCount = 0
+
+    init(granted: Bool) {
+        self.granted = granted
+    }
+
+    func isGranted() async -> Bool {
+        isGrantedCallCount += 1
+        return granted
     }
 }
 
