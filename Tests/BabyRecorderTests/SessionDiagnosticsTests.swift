@@ -50,6 +50,12 @@ final class SessionDiagnosticsTests: XCTestCase {
         XCTAssertEqual(decoded?["sessionId"] as? String, diagnostics.sessionId)
         XCTAssertNotNil(decoded?["permissions"])
         XCTAssertNotNil(decoded?["configuration"])
+        let transcription = try XCTUnwrap(decoded?["transcription"] as? [String: Any])
+        XCTAssertEqual(transcription["engine"] as? String, "whisper.cpp")
+        XCTAssertEqual(transcription["inputTrack"] as? String, "mixed.wav")
+        XCTAssertEqual(transcription["modelDirectory"] as? String, "/Users/yimingliu/Desktop/宝宝录音App/Models")
+        XCTAssertEqual(transcription["modelStatus"] as? String, "modelMissing")
+        XCTAssertEqual(transcription["transcriptPath"] as? String, "transcript.json")
         let tracks = try XCTUnwrap(decoded?["tracks"] as? [String: Any])
         let mixed = try XCTUnwrap(tracks["mixed"] as? [String: Any])
         XCTAssertEqual(mixed["systemGainDb"] as? Double, -1.5)
@@ -102,5 +108,15 @@ final class SessionDiagnosticsTests: XCTestCase {
         XCTAssertEqual(paths.micWav.lastPathComponent, "mic.wav")
         XCTAssertEqual(paths.mixedWav.lastPathComponent, "mixed.wav")
         XCTAssertEqual(paths.sessionJSON.lastPathComponent, "session.json")
+    }
+
+    func testTranscriptionModelStatusIsReadyWhenModelFileExists() throws {
+        let modelDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+        try Data().write(to: modelDirectory.appendingPathComponent("ggml-base.bin"))
+
+        let transcription = TranscriptionConfigurationSnapshot(modelDirectory: modelDirectory)
+
+        XCTAssertEqual(transcription.modelStatus, "ready")
     }
 }

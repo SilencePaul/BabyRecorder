@@ -2,3 +2,7 @@
 Recordings/
 .build/
 /build/
+/Models/*.bin
+/Models/*.mlmodelc
+/Transcripts/*
+!/Transcripts/.gitkeep

@@ -23,6 +23,33 @@ struct CaptureConfigurationSnapshot: Codable, Equatable {
     var excludesCurrentProcessAudio = true
 }
 
+struct TranscriptionConfigurationSnapshot: Codable, Equatable {
+    var engine = "whisper.cpp"
+    var inputTrack = "mixed.wav"
+    var modelDirectory: String
+    var modelPattern = "ggml-*.bin"
+    var modelStatus: String
+    var transcriptPath = "transcript.json"
+
+    init(
+        modelDirectory: URL = URL(fileURLWithPath: "/Users/yimingliu/Desktop/宝宝录音App/Models", isDirectory: true),
+        fileManager: FileManager = .default
+    ) {
+        self.modelDirectory = modelDirectory.path
+        self.modelStatus = Self.containsWhisperModel(in: modelDirectory, fileManager: fileManager) ? "ready" : "modelMissing"
+    }
+
+    private static func containsWhisperModel(in directory: URL, fileManager: FileManager) -> Bool {
+        guard let contents = try? fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) else {
+            return false
+        }
+        return contents.contains { url in
+            let name = url.lastPathComponent
+            return name.hasPrefix("ggml-") && name.hasSuffix(".bin")
+        }
+    }
+}
+
 struct TrackDiagnostics: Codable, Equatable {
     var path: String
     var bufferCount: Int = 0
@@ -65,6 +92,7 @@ struct SessionDiagnostics: Codable, Equatable {
     var permissions: PermissionSnapshot
     var recording: RecordingSnapshot
     var configuration: CaptureConfigurationSnapshot
+    var transcription: TranscriptionConfigurationSnapshot
     var tracks: TrackGroupDiagnostics
     var validation: ValidationResult?
     var errors: [AppErrorRecord]
@@ -106,6 +134,7 @@ struct SessionDiagnostics: Codable, Equatable {
                 outputDirectory: outputDirectory.path
             ),
             configuration: CaptureConfigurationSnapshot(),
+            transcription: TranscriptionConfigurationSnapshot(),
             tracks: TrackGroupDiagnostics(),
             validation: nil,
             errors: []
