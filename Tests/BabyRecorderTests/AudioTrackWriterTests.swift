@@ -58,6 +58,37 @@ final class AudioTrackWriterTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(writer.stats.lastPTS), 0.5, accuracy: 0.001)
     }
 
+    func testWriterRecordsInterleavedStereoBufferStats() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let url = dir.appendingPathComponent("mic.wav")
+        let frameCount: AVAudioFrameCount = 128
+        let format = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 48_000,
+            channels: 2,
+            interleaved: true
+        )!
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)!
+        buffer.frameLength = frameCount
+        let samples = buffer.mutableAudioBufferList.pointee.mBuffers.mData!.assumingMemoryBound(to: Float.self)
+        for sample in 0..<(Int(frameCount) * Int(format.channelCount)) {
+            samples[sample] = Float(sample) / 1000.0
+        }
+
+        let writer = AudioTrackWriter(url: url)
+        try writer.write(buffer: buffer, pts: CMTime(seconds: 0.75, preferredTimescale: 48_000))
+        writer.close()
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+        XCTAssertGreaterThan(try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64 ?? 0, 0)
+        XCTAssertEqual(writer.stats.bufferCount, 1)
+        XCTAssertEqual(writer.stats.framesWritten, Int64(frameCount))
+        XCTAssertEqual(writer.stats.bytesWritten, 1024)
+        XCTAssertEqual(try XCTUnwrap(writer.stats.firstPTS), 0.75, accuracy: 0.001)
+        XCTAssertEqual(try XCTUnwrap(writer.stats.lastPTS), 0.75, accuracy: 0.001)
+    }
+
     func testFailedWriteLeavesStatsAtZero() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
