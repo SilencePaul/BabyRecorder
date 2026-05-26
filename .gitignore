@@ -1,5 +1,4 @@
 .DS_Store
 Recordings/
 .build/
-build
-build/
+/build/
