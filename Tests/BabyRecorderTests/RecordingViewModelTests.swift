@@ -130,6 +130,22 @@ final class RecordingViewModelTests: XCTestCase {
         XCTAssertEqual(captureService.stopCallCount, 1)
     }
 
+    func testFinishedRecordingCanStartAgainWithoutRestartingApp() async {
+        let captureService = FakeCaptureService()
+        let viewModel = await RecordingViewModel(permissionService: FakePermissionService(screen: true, mic: true), captureService: captureService)
+        await viewModel.checkPermissions()
+        await viewModel.startRecording()
+        await viewModel.stopRecording()
+
+        let canStartAfterFinished = await viewModel.canStartRecording
+        await viewModel.startRecording()
+
+        let state = await viewModel.state
+        XCTAssertTrue(canStartAfterFinished)
+        XCTAssertEqual(state, .recording)
+        XCTAssertEqual(captureService.startCallCount, 2)
+    }
+
     func testRecordingStopWithMixFailureEntersFinishedWithMixFailure() async {
         let captureService = FakeCaptureService(
             stopResult: RecordingCompletion(
@@ -147,6 +163,28 @@ final class RecordingViewModelTests: XCTestCase {
         let state = await viewModel.state
         XCTAssertEqual(state, .finishedWithMixFailure)
         XCTAssertEqual(captureService.stopCallCount, 1)
+    }
+
+    func testFinishedWithMixFailureCanStartAgainWithoutRestartingApp() async {
+        let captureService = FakeCaptureService(
+            stopResult: RecordingCompletion(
+                outputDirectory: FileManager.default.temporaryDirectory,
+                validation: Self.validation(passed: false),
+                mixFailed: true
+            )
+        )
+        let viewModel = await RecordingViewModel(permissionService: FakePermissionService(screen: true, mic: true), captureService: captureService)
+        await viewModel.checkPermissions()
+        await viewModel.startRecording()
+        await viewModel.stopRecording()
+
+        let canStartAfterFinished = await viewModel.canStartRecording
+        await viewModel.startRecording()
+
+        let state = await viewModel.state
+        XCTAssertTrue(canStartAfterFinished)
+        XCTAssertEqual(state, .recording)
+        XCTAssertEqual(captureService.startCallCount, 2)
     }
 
     fileprivate static func validation(passed: Bool) -> ValidationResult {

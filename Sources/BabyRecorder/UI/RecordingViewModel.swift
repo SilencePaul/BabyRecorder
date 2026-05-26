@@ -40,7 +40,7 @@ final class RecordingViewModel: ObservableObject {
     }
 
     var canStartRecording: Bool {
-        state == .ready && permissionStatus.isReady
+        isStartableState && permissionStatus.isReady
     }
 
     func checkPermissions() async {
@@ -67,7 +67,7 @@ final class RecordingViewModel: ObservableObject {
             return
         }
 
-        guard state == .ready else {
+        guard isStartableState else {
             if !permissionStatus.isReady {
                 state = .permissionsMissing
             }
@@ -81,6 +81,8 @@ final class RecordingViewModel: ObservableObject {
 
         do {
             state = .starting
+            outputDirectory = nil
+            validation = nil
             try await captureService.start(permissionSnapshot: permissionStatus.snapshot)
             state = .recording
         } catch {
@@ -102,5 +104,9 @@ final class RecordingViewModel: ObservableObject {
         } catch {
             state = .failed(error.localizedDescription)
         }
+    }
+
+    private var isStartableState: Bool {
+        state == .ready || state == .finished || state == .finishedWithMixFailure
     }
 }
