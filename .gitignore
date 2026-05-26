@@ -6,3 +6,4 @@ Recordings/
 /Models/*.mlmodelc
 /Transcripts/*
 !/Transcripts/.gitkeep
+.superpowers/
