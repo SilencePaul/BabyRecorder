@@ -1,2 +1,3 @@
+"CFBundleName" = "Baby Recorder";
 "CFBundleDisplayName" = "Baby Recorder";
 "NSMicrophoneUsageDescription" = "Baby Recorder needs microphone access to capture the default microphone track.";

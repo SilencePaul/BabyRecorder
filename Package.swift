@@ -5,9 +5,7 @@ let package = Package(
     name: "BabyRecorder",
     defaultLocalization: "zh-Hans",
     platforms: [
-        // SwiftPM 6.2 expresses Tahoe at the major-version level; the packaged
-        // app enforces the spec's patch-level 26.4.1+ runtime floor via Info.plist.
-        .macOS(.v26)
+        .macOS("26.4.1")
     ],
     products: [
         .executable(name: "BabyRecorder", targets: ["BabyRecorder"])

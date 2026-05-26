@@ -1,2 +1,3 @@
+"CFBundleName" = "宝宝录音";
 "CFBundleDisplayName" = "宝宝录音";
 "NSMicrophoneUsageDescription" = "宝宝录音需要麦克风权限来录制默认麦克风音轨。";
