@@ -12,6 +12,7 @@ final class CaptureService: NSObject, CaptureServicing, SCStreamDelegate, @unche
     private let delegateErrorLock = NSLock()
     private var delegateStopErrors: [AppErrorRecord] = []
     private let mixer = Mixer()
+    private let microphoneDeviceProvider = SystemMicrophoneDeviceProvider()
 
     func start(permissionSnapshot: PermissionSnapshot) async throws {
         let paths = try RecordingSessionPaths.create()
@@ -46,6 +47,10 @@ final class CaptureService: NSObject, CaptureServicing, SCStreamDelegate, @unche
         let configuration = SCStreamConfiguration()
         configuration.capturesAudio = true
         configuration.captureMicrophone = true
+        if let microphoneDevice = microphoneDeviceProvider.preferredDevice() {
+            configuration.microphoneCaptureDeviceID = microphoneDevice.uniqueID
+            diagnostics.configuration.microphone = "ScreenCaptureKit.microphone.\(microphoneDevice.localizedName)"
+        }
         configuration.sampleRate = 48_000
         configuration.channelCount = 2
         configuration.excludesCurrentProcessAudio = true
