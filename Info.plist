@@ -10,6 +10,8 @@
   <string>BabyRecorder</string>
   <key>CFBundleDisplayName</key>
   <string>Baby Recorder</string>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>zh-Hans</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
