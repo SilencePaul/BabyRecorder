@@ -81,6 +81,39 @@ final class MixerTests: XCTestCase {
         }
     }
 
+    func testAutoBalancesQuietMicrophoneTowardSystemLevel() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let system = dir.appendingPathComponent("system.wav")
+        let mic = dir.appendingPathComponent("mic.wav")
+        let out = dir.appendingPathComponent("mixed.wav")
+        try TestAudio.writeConstant(url: system, value: 0.20, duration: 0.1)
+        try TestAudio.writeConstant(url: mic, value: 0.02, duration: 0.1)
+
+        let result = try Mixer().mix(systemURL: system, microphoneURL: mic, outputURL: out)
+
+        XCTAssertEqual(result.systemGainDb, 0, accuracy: 0.01)
+        XCTAssertEqual(result.microphoneGainDb, 12, accuracy: 0.01)
+        let buffer = try TestAudio.readPCM(url: out)
+        let firstSample = buffer.floatChannelData![0][0]
+        XCTAssertEqual(firstSample, 0.20 + (0.02 * pow(10, 12.0 / 20.0)), accuracy: 0.0001)
+    }
+
+    func testAutoBalanceIgnoresSilentSamplesWhenCalculatingRMS() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let system = dir.appendingPathComponent("system.wav")
+        let mic = dir.appendingPathComponent("mic.wav")
+        let out = dir.appendingPathComponent("mixed.wav")
+        try TestAudio.writeHalfSilenceHalfConstant(url: system, value: 0.20, duration: 0.2)
+        try TestAudio.writeHalfSilenceHalfConstant(url: mic, value: 0.10, duration: 0.2)
+
+        let result = try Mixer().mix(systemURL: system, microphoneURL: mic, outputURL: out)
+
+        XCTAssertEqual(result.systemGainDb, 0, accuracy: 0.01)
+        XCTAssertEqual(result.microphoneGainDb, 6.0206, accuracy: 0.01)
+    }
+
     private func assertMixedOutputIs48kStereoAndAudible(_ url: URL) throws {
         let file = try AVAudioFile(forReading: url)
         XCTAssertEqual(file.processingFormat.sampleRate, 48_000, accuracy: 0.001)
@@ -118,6 +151,20 @@ enum TestAudio {
         let samples = buffer.floatChannelData![0]
         for index in 0..<Int(frameCount) {
             samples[index] = value
+        }
+        let file = try AVAudioFile(forWriting: url, settings: format.settings)
+        try file.write(from: buffer)
+    }
+
+    static func writeHalfSilenceHalfConstant(url: URL, value: Float, duration: Double, sampleRate: Double = 48_000) throws {
+        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
+        let frameCount = AVAudioFrameCount(sampleRate * duration)
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)!
+        buffer.frameLength = frameCount
+        let samples = buffer.floatChannelData![0]
+        let midpoint = Int(frameCount) / 2
+        for index in 0..<Int(frameCount) {
+            samples[index] = index < midpoint ? 0 : value
         }
         let file = try AVAudioFile(forWriting: url, settings: format.settings)
         try file.write(from: buffer)

@@ -35,6 +35,8 @@ struct TrackDiagnostics: Codable, Equatable {
 struct MixedTrackDiagnostics: Codable, Equatable {
     var path: String
     var bytesWritten: Int64 = 0
+    var systemGainDb: Double = 0
+    var microphoneGainDb: Double = 0
 }
 
 struct TrackGroupDiagnostics: Codable, Equatable {

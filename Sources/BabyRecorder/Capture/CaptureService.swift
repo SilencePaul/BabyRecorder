@@ -104,6 +104,8 @@ final class CaptureService: NSObject, CaptureServicing, SCStreamDelegate, @unche
         do {
             let mix = try mixer.mix(systemURL: paths.systemWav, microphoneURL: paths.micWav, outputURL: paths.mixedWav)
             diagnostics.tracks.mixed.bytesWritten = mix.bytesWritten
+            diagnostics.tracks.mixed.systemGainDb = mix.systemGainDb
+            diagnostics.tracks.mixed.microphoneGainDb = mix.microphoneGainDb
         } catch {
             mixFailed = true
             diagnostics.errors.append(AppErrorRecord(.mixedWavWriteFailed, message: error.localizedDescription))

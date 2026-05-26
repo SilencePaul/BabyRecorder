@@ -3,6 +3,8 @@ import Foundation
 
 struct MixResult: Equatable {
     let bytesWritten: Int64
+    let systemGainDb: Double
+    let microphoneGainDb: Double
 }
 
 enum MixerError: Error, Equatable {
@@ -26,9 +28,12 @@ struct Mixer {
 
         let systemBuffer = try readConverted(file: systemFile, outputFormat: outputFormat)
         let microphoneBuffer = try readConverted(file: microphoneFile, outputFormat: outputFormat)
+        let gain = Self.automaticGain(systemBuffer: systemBuffer, microphoneBuffer: microphoneBuffer)
         let frameCount = max(systemBuffer.frameLength, microphoneBuffer.frameLength)
         let mixedBuffer = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: frameCount)!
         mixedBuffer.frameLength = frameCount
+        let systemGain = Self.linearGain(fromDb: gain.systemGainDb)
+        let microphoneGain = Self.linearGain(fromDb: gain.microphoneGainDb)
 
         let channelCount = Int(outputFormat.channelCount)
         for channel in 0..<channelCount {
@@ -39,7 +44,7 @@ struct Mixer {
             for frame in 0..<Int(frameCount) {
                 let systemSample = frame < Int(systemBuffer.frameLength) ? systemSamples[frame] : 0
                 let microphoneSample = frame < Int(microphoneBuffer.frameLength) ? microphoneSamples[frame] : 0
-                mixedSamples[frame] = min(1, max(-1, systemSample + microphoneSample))
+                mixedSamples[frame] = min(1, max(-1, (systemSample * systemGain) + (microphoneSample * microphoneGain)))
             }
         }
 
@@ -48,7 +53,7 @@ struct Mixer {
 
         let attributes = try fileManager.attributesOfItem(atPath: outputURL.path)
         let bytesWritten = (attributes[.size] as? NSNumber)?.int64Value ?? 0
-        return MixResult(bytesWritten: bytesWritten)
+        return MixResult(bytesWritten: bytesWritten, systemGainDb: gain.systemGainDb, microphoneGainDb: gain.microphoneGainDb)
     }
 
     private func openFile(at url: URL) throws -> AVAudioFile {
@@ -145,6 +150,44 @@ struct Mixer {
         }
 
         return outputBuffer
+    }
+
+    private static func automaticGain(systemBuffer: AVAudioPCMBuffer, microphoneBuffer: AVAudioPCMBuffer) -> (systemGainDb: Double, microphoneGainDb: Double) {
+        let systemRMS = nonSilentRMS(systemBuffer)
+        let microphoneRMS = nonSilentRMS(microphoneBuffer)
+        guard let systemRMS, let microphoneRMS, systemRMS > 0, microphoneRMS > 0 else {
+            return (0, 0)
+        }
+
+        let requestedMicrophoneGainDb = 20 * log10(systemRMS / microphoneRMS)
+        return (0, min(12, max(-6, requestedMicrophoneGainDb)))
+    }
+
+    private static func nonSilentRMS(_ buffer: AVAudioPCMBuffer) -> Double? {
+        let silenceThreshold = Double(linearGain(fromDb: -50))
+        var sumSquares = 0.0
+        var count = 0
+
+        for channel in 0..<Int(buffer.format.channelCount) {
+            let samples = buffer.floatChannelData![channel]
+            for frame in 0..<Int(buffer.frameLength) {
+                let sample = Double(samples[frame])
+                guard abs(sample) >= silenceThreshold else {
+                    continue
+                }
+                sumSquares += sample * sample
+                count += 1
+            }
+        }
+
+        guard count > 0 else {
+            return nil
+        }
+        return sqrt(sumSquares / Double(count))
+    }
+
+    private static func linearGain(fromDb db: Double) -> Float {
+        Float(pow(10, db / 20))
     }
 }
 

@@ -38,6 +38,8 @@ final class SessionDiagnosticsTests: XCTestCase {
         var diagnostics = SessionDiagnostics.newSession(outputDirectory: temp, permissionSnapshot: .grantedForTests())
         diagnostics.tracks.system.bufferCount = 1
         diagnostics.tracks.microphone.bufferCount = 1
+        diagnostics.tracks.mixed.systemGainDb = -1.5
+        diagnostics.tracks.mixed.microphoneGainDb = 8.25
         diagnostics.validation = diagnostics.validationResult(fileExistsAndNonEmpty: { _ in true })
 
         let url = temp.appendingPathComponent("session.json")
@@ -48,7 +50,10 @@ final class SessionDiagnosticsTests: XCTestCase {
         XCTAssertEqual(decoded?["sessionId"] as? String, diagnostics.sessionId)
         XCTAssertNotNil(decoded?["permissions"])
         XCTAssertNotNil(decoded?["configuration"])
-        XCTAssertNotNil(decoded?["tracks"])
+        let tracks = try XCTUnwrap(decoded?["tracks"] as? [String: Any])
+        let mixed = try XCTUnwrap(tracks["mixed"] as? [String: Any])
+        XCTAssertEqual(mixed["systemGainDb"] as? Double, -1.5)
+        XCTAssertEqual(mixed["microphoneGainDb"] as? Double, 8.25)
         XCTAssertNotNil(decoded?["validation"])
         XCTAssertNotNil(decoded?["errors"])
     }
