@@ -1,6 +1,7 @@
 .DS_Store
 Recordings/
 .build/
+.venv-asr/
 /build/
 /build
 /Models/*.bin
