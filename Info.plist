@@ -5,7 +5,7 @@
   <key>CFBundleExecutable</key>
   <string>BabyRecorder</string>
   <key>CFBundleIdentifier</key>
-  <string>local.babyrecorder.mvp</string>
+  <string>com.yimingliu.BabyRecorder</string>
   <key>CFBundleName</key>
   <string>BabyRecorder</string>
   <key>CFBundleDisplayName</key>

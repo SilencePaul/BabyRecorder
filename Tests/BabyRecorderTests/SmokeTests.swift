@@ -17,13 +17,16 @@ final class SmokeTests: XCTestCase {
         )
     }
 
+    func testBundleIdentityIsStableForSystemPermissions() throws {
+        let plist = try infoPlist()
+
+        XCTAssertEqual(plist["CFBundleIdentifier"] as? String, "com.yimingliu.BabyRecorder")
+        XCTAssertEqual(plist["CFBundleName"] as? String, "BabyRecorder")
+        XCTAssertEqual(plist["LSMinimumSystemVersion"] as? String, "26.4.1")
+    }
+
     private func infoPlistStrings(for localization: String) throws -> [String: Any] {
-        let testFile = URL(fileURLWithPath: #filePath)
-        let packageRoot = testFile
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let stringsURL = packageRoot
+        let stringsURL = packageRoot()
             .appendingPathComponent("Sources/BabyRecorder/Resources")
             .appendingPathComponent("\(localization).lproj")
             .appendingPathComponent("InfoPlist.strings")
@@ -31,5 +34,20 @@ final class SmokeTests: XCTestCase {
         return try XCTUnwrap(
             PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
         )
+    }
+
+    private func infoPlist() throws -> [String: Any] {
+        let data = try Data(contentsOf: packageRoot().appendingPathComponent("Info.plist"))
+        return try XCTUnwrap(
+            PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
+        )
+    }
+
+    private func packageRoot() -> URL {
+        let testFile = URL(fileURLWithPath: #filePath)
+        return testFile
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
     }
 }
