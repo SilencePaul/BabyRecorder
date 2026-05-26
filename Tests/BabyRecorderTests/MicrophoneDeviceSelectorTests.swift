@@ -19,7 +19,7 @@ final class MicrophoneDeviceSelectorTests: XCTestCase {
         XCTAssertEqual(selected, airPods)
     }
 
-    func testSkipsExternalHeadphoneInputAndFallsBackToBuiltInMicrophone() {
+    func testPrefersDefaultExternalMicrophoneForWiredHeadset() {
         let headphoneInput = AudioInputDevice(
             uniqueID: "BuiltInHeadphoneInputDevice",
             localizedName: "External Microphone",
@@ -33,7 +33,7 @@ final class MicrophoneDeviceSelectorTests: XCTestCase {
 
         let selected = MicrophoneDeviceSelector.preferredDevice(from: [headphoneInput, builtIn], defaultDeviceID: headphoneInput.uniqueID)
 
-        XCTAssertEqual(selected, builtIn)
+        XCTAssertEqual(selected, headphoneInput)
     }
 
     func testSkipsAggregateAndVirtualDevicesBeforeBuiltInMicrophone() {

@@ -28,10 +28,7 @@ enum MicrophoneDeviceSelector {
         let rejectedTerms = [
             "blackhole",
             "aggregate",
-            "meeting_output",
-            "builtInHeadphoneInputDevice".lowercased(),
-            "external microphone",
-            "external headphone"
+            "meeting_output"
         ]
         return !rejectedTerms.contains { haystack.contains($0) }
     }
