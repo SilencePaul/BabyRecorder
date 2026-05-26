@@ -3,14 +3,19 @@ import SwiftUI
 
 @main
 struct BabyRecorderApp: App {
+    @NSApplicationDelegateAdaptor(AppLifecycleDelegate.self) private var appDelegate
     @Environment(\.openWindow) private var openWindow
     @StateObject private var viewModel = RecordingViewModel(captureService: CaptureService())
 
     var body: some Scene {
-        WindowGroup(id: "main") {
+        Window("app.title", id: "main") {
             ContentView(viewModel: viewModel)
+                .background(WindowCloseHider())
                 .task {
                     await viewModel.checkPermissions()
+                }
+                .onAppear {
+                    appDelegate.viewModel = viewModel
                 }
         }
         .windowStyle(.titleBar)
@@ -77,8 +82,54 @@ struct BabyRecorderApp: App {
     }
 
     private func openMainWindow() {
-        openWindow(id: "main")
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.windows.first?.makeKeyAndOrderFront(nil)
+        if bringExistingMainWindowForward() {
+            return
+        }
+
+        openWindow(id: "main")
+        DispatchQueue.main.async {
+            _ = bringExistingMainWindowForward()
+        }
+    }
+
+    private func bringExistingMainWindowForward() -> Bool {
+        guard let window = NSApp.windows.first(where: { window in
+            window.identifier?.rawValue == WindowCloseHider.mainWindowIdentifier
+        }) else {
+            return false
+        }
+
+        window.makeKeyAndOrderFront(nil)
+        return true
+    }
+}
+
+@MainActor
+final class AppLifecycleDelegate: NSObject, NSApplicationDelegate {
+    weak var viewModel: RecordingViewModel?
+    var confirmQuitWhileRecording: @MainActor () -> Bool = AppLifecycleDelegate.showQuitConfirmation
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard viewModel?.state == .recording else {
+            return .terminateNow
+        }
+
+        return confirmQuitWhileRecording() ? .terminateNow : .terminateCancel
+    }
+
+    private static func showQuitConfirmation() -> Bool {
+        let alert = NSAlert()
+        alert.messageText = String(localized: "quit.confirm.title")
+        alert.informativeText = String(localized: "quit.confirm.message")
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: String(localized: "quit.confirm.quit"))
+        alert.addButton(withTitle: String(localized: "quit.confirm.cancel"))
+
+        return alert.runModal() == .alertFirstButtonReturn
     }
 }
