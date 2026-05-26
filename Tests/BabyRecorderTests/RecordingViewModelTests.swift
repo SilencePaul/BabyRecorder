@@ -187,6 +187,43 @@ final class RecordingViewModelTests: XCTestCase {
         XCTAssertEqual(captureService.startCallCount, 2)
     }
 
+    func testRevealOutputDoesNothingWhenNoOutputDirectoryExists() async {
+        let filePresenter = FakeFilePresenter()
+        let viewModel = await RecordingViewModel(
+            permissionService: FakePermissionService(screen: true, mic: true),
+            captureService: FakeCaptureService(),
+            filePresenter: filePresenter
+        )
+
+        await viewModel.revealOutputDirectory()
+
+        XCTAssertEqual(filePresenter.revealedURLs, [])
+    }
+
+    func testRevealOutputPresentsStoredOutputDirectory() async {
+        let outputDirectory = URL(fileURLWithPath: "/tmp/baby-recorder-tests/reveal", isDirectory: true)
+        let filePresenter = FakeFilePresenter()
+        let captureService = FakeCaptureService(
+            stopResult: RecordingCompletion(
+                outputDirectory: outputDirectory,
+                validation: Self.validation(passed: true),
+                mixFailed: false
+            )
+        )
+        let viewModel = await RecordingViewModel(
+            permissionService: FakePermissionService(screen: true, mic: true),
+            captureService: captureService,
+            filePresenter: filePresenter
+        )
+        await viewModel.checkPermissions()
+        await viewModel.startRecording()
+        await viewModel.stopRecording()
+
+        await viewModel.revealOutputDirectory()
+
+        XCTAssertEqual(filePresenter.revealedURLs, [outputDirectory])
+    }
+
     fileprivate static func validation(passed: Bool) -> ValidationResult {
         ValidationResult(
             passed: passed,
@@ -239,5 +276,13 @@ private final class FakeCaptureService: CaptureServicing, @unchecked Sendable {
     func stop() async throws -> RecordingCompletion {
         stopCallCount += 1
         return stopResult
+    }
+}
+
+private final class FakeFilePresenter: FilePresenting, @unchecked Sendable {
+    private(set) var revealedURLs: [URL] = []
+
+    func revealInFinder(_ url: URL) {
+        revealedURLs.append(url)
     }
 }

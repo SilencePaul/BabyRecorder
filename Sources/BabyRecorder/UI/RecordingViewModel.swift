@@ -33,14 +33,40 @@ final class RecordingViewModel: ObservableObject {
 
     private let permissionService: PermissionServicing
     private let captureService: CaptureServicing
+    private let filePresenter: FilePresenting
 
-    init(permissionService: PermissionServicing = PermissionService(), captureService: CaptureServicing) {
+    init(
+        permissionService: PermissionServicing = PermissionService(),
+        captureService: CaptureServicing,
+        filePresenter: FilePresenting = FinderFilePresenter()
+    ) {
         self.permissionService = permissionService
         self.captureService = captureService
+        self.filePresenter = filePresenter
     }
 
     var canStartRecording: Bool {
         isStartableState && permissionStatus.isReady
+    }
+
+    var canRevealOutputDirectory: Bool {
+        outputDirectory != nil
+    }
+
+    var presentation: RecordingPresentation {
+        RecordingPresentation(
+            state: state,
+            permissions: permissionStatus,
+            validation: validation,
+            outputDirectory: outputDirectory
+        )
+    }
+
+    func revealOutputDirectory() {
+        guard let outputDirectory else {
+            return
+        }
+        filePresenter.revealInFinder(outputDirectory)
     }
 
     func checkPermissions() async {
