@@ -109,17 +109,36 @@ struct BabyRecorderApp: App {
 final class AppLifecycleDelegate: NSObject, NSApplicationDelegate {
     weak var viewModel: RecordingViewModel?
     var confirmQuitWhileRecording: @MainActor () -> Bool = AppLifecycleDelegate.showQuitConfirmation
+    var completeTerminationAfterRecordingStop: @MainActor (Bool) -> Void = { shouldTerminate in
+        NSApp.reply(toApplicationShouldTerminate: shouldTerminate)
+    }
+    private var isCompletingRecordingQuit = false
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard viewModel?.state == .recording else {
+        if isCompletingRecordingQuit {
+            return .terminateLater
+        }
+
+        guard let viewModel, viewModel.state == .recording else {
             return .terminateNow
         }
 
-        return confirmQuitWhileRecording() ? .terminateNow : .terminateCancel
+        guard confirmQuitWhileRecording() else {
+            return .terminateCancel
+        }
+
+        isCompletingRecordingQuit = true
+        Task { @MainActor [weak self, viewModel] in
+            await viewModel.stopRecording()
+            self?.isCompletingRecordingQuit = false
+            self?.completeTerminationAfterRecordingStop(true)
+        }
+
+        return .terminateLater
     }
 
     private static func showQuitConfirmation() -> Bool {

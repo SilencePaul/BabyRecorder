@@ -41,20 +41,30 @@ final class AppLifecycleDelegateTests: XCTestCase {
         XCTAssertEqual(reply, .terminateCancel)
     }
 
-    func testQuitWhileRecordingTerminatesWhenConfirmationAccepts() async {
+    func testQuitWhileRecordingStopsBeforeCompletingAcceptedTermination() async {
         let delegate = AppLifecycleDelegate()
+        let captureService = FakeLifecycleCaptureService()
         let viewModel = RecordingViewModel(
             permissionService: FakeLifecyclePermissionService(screen: true, mic: true),
-            captureService: FakeLifecycleCaptureService()
+            captureService: captureService
         )
         await viewModel.checkPermissions()
         await viewModel.startRecording()
         delegate.viewModel = viewModel
         delegate.confirmQuitWhileRecording = { true }
+        let terminationCompleted = expectation(description: "termination reply completes")
+        delegate.completeTerminationAfterRecordingStop = { shouldTerminate in
+            XCTAssertTrue(shouldTerminate)
+            XCTAssertEqual(captureService.stopCallCount, 1)
+            terminationCompleted.fulfill()
+        }
 
         let reply = delegate.applicationShouldTerminate(NSApplication.shared)
 
-        XCTAssertEqual(reply, .terminateNow)
+        XCTAssertEqual(reply, .terminateLater)
+        await fulfillment(of: [terminationCompleted], timeout: 1)
+        XCTAssertEqual(captureService.stopCallCount, 1)
+        XCTAssertEqual(viewModel.state, .finished)
     }
 }
 
@@ -75,10 +85,13 @@ private final class FakeLifecyclePermissionService: PermissionServicing, @unchec
 }
 
 private final class FakeLifecycleCaptureService: CaptureServicing, @unchecked Sendable {
+    private(set) var stopCallCount = 0
+
     func start(permissionSnapshot: PermissionSnapshot) async throws {}
 
     func stop() async throws -> RecordingCompletion {
-        RecordingCompletion(
+        stopCallCount += 1
+        return RecordingCompletion(
             outputDirectory: FileManager.default.temporaryDirectory,
             validation: ValidationResult(
                 passed: true,

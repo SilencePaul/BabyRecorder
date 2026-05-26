@@ -1,11 +1,13 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 import PackageDescription
 
 let package = Package(
     name: "BabyRecorder",
     defaultLocalization: "zh-Hans",
     platforms: [
-        .macOS(.v15)
+        // SwiftPM 6.2 expresses Tahoe at the major-version level; the packaged
+        // app enforces the spec's patch-level 26.4.1+ runtime floor via Info.plist.
+        .macOS(.v26)
     ],
     products: [
         .executable(name: "BabyRecorder", targets: ["BabyRecorder"])

@@ -2,6 +2,7 @@
 Recordings/
 .build/
 /build/
+/build
 /Models/*.bin
 /Models/*.mlmodelc
 /Transcripts/*
