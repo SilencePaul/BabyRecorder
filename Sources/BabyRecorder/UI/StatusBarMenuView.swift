@@ -30,6 +30,13 @@ struct StatusBarMenuView: View {
         .disabled(!viewModel.canRevealOutputDirectory)
 
         Button {
+            Task { await viewModel.transcribeLatestRecording() }
+        } label: {
+            Label("transcription.action.latest", systemImage: "text.magnifyingglass")
+        }
+        .disabled(!viewModel.canTranscribe)
+
+        Button {
             Task { await viewModel.checkPermissions() }
         } label: {
             Label("menu.recheckPermissions", systemImage: "arrow.clockwise")

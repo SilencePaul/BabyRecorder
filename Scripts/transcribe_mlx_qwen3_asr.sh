@@ -17,7 +17,7 @@ else
 fi
 
 AUDIO_PATH="${SESSION_DIR}/mixed.wav"
-MODEL_ID="${QWEN3_ASR_MODEL:-Qwen/Qwen3-ASR-1.7B}"
+MODEL_ID="${QWEN3_ASR_MODEL:-Qwen/Qwen3-ASR-0.6B}"
 LANGUAGE="${QWEN3_ASR_LANGUAGE:-Chinese}"
 RAW_JSON="${SESSION_DIR}/mixed.json"
 TRANSCRIPT_JSON="${SESSION_DIR}/transcript.json"

@@ -224,6 +224,112 @@ final class RecordingViewModelTests: XCTestCase {
         XCTAssertEqual(filePresenter.revealedURLs, [outputDirectory])
     }
 
+    func testFinishedRecordingCanBeTranscribed() async {
+        let outputDirectory = URL(fileURLWithPath: "/tmp/baby-recorder-tests/transcribe", isDirectory: true)
+        let transcriptionService = FakeTranscriptionService(
+            result: TranscriptionResult(
+                text: "开始录音测试。",
+                transcriptURL: outputDirectory.appendingPathComponent("transcript.txt"),
+                metadataURL: outputDirectory.appendingPathComponent("transcript.json")
+            )
+        )
+        let captureService = FakeCaptureService(
+            stopResult: RecordingCompletion(
+                outputDirectory: outputDirectory,
+                validation: Self.validation(passed: true),
+                mixFailed: false
+            )
+        )
+        let viewModel = await RecordingViewModel(
+            permissionService: FakePermissionService(screen: true, mic: true),
+            captureService: captureService,
+            transcriptionService: transcriptionService
+        )
+        await viewModel.checkPermissions()
+        await viewModel.startRecording()
+        await viewModel.stopRecording()
+
+        await viewModel.transcribeLatestRecording()
+
+        let transcription = await viewModel.transcription
+        XCTAssertEqual(transcriptionService.requests, [
+            TranscriptionRequest(sessionDirectory: outputDirectory, model: .fast)
+        ])
+        XCTAssertEqual(transcription.status, .completed)
+        XCTAssertEqual(transcription.text, "开始录音测试。")
+        XCTAssertEqual(transcription.transcriptURL, outputDirectory.appendingPathComponent("transcript.txt"))
+    }
+
+    func testTranscriptionFailureStoresRetryableError() async {
+        let outputDirectory = URL(fileURLWithPath: "/tmp/baby-recorder-tests/transcribe-fail", isDirectory: true)
+        let transcriptionService = FakeTranscriptionService(error: FakeTranscriptionError.failed)
+        let captureService = FakeCaptureService(
+            stopResult: RecordingCompletion(
+                outputDirectory: outputDirectory,
+                validation: Self.validation(passed: true),
+                mixFailed: false
+            )
+        )
+        let viewModel = await RecordingViewModel(
+            permissionService: FakePermissionService(screen: true, mic: true),
+            captureService: captureService,
+            transcriptionService: transcriptionService
+        )
+        await viewModel.checkPermissions()
+        await viewModel.startRecording()
+        await viewModel.stopRecording()
+
+        await viewModel.transcribeLatestRecording()
+
+        let transcription = await viewModel.transcription
+        let canTranscribe = await viewModel.canTranscribe
+        XCTAssertEqual(transcription.status, .failed)
+        XCTAssertEqual(transcription.errorMessage, "转写失败")
+        XCTAssertTrue(canTranscribe)
+    }
+
+    func testTranscriptionCannotStartWithoutOutputDirectory() async {
+        let transcriptionService = FakeTranscriptionService()
+        let viewModel = await RecordingViewModel(
+            permissionService: FakePermissionService(screen: true, mic: true),
+            captureService: FakeCaptureService(),
+            transcriptionService: transcriptionService
+        )
+        await viewModel.checkPermissions()
+
+        await viewModel.transcribeLatestRecording()
+
+        let transcription = await viewModel.transcription
+        XCTAssertEqual(transcriptionService.requests, [])
+        XCTAssertEqual(transcription.status, .idle)
+    }
+
+    func testTranscriptionDoesNotStartTwiceWhileRunning() async {
+        let outputDirectory = URL(fileURLWithPath: "/tmp/baby-recorder-tests/transcribe-running", isDirectory: true)
+        let transcriptionService = FakeTranscriptionService(delayNanoseconds: 50_000_000)
+        let captureService = FakeCaptureService(
+            stopResult: RecordingCompletion(
+                outputDirectory: outputDirectory,
+                validation: Self.validation(passed: true),
+                mixFailed: false
+            )
+        )
+        let viewModel = await RecordingViewModel(
+            permissionService: FakePermissionService(screen: true, mic: true),
+            captureService: captureService,
+            transcriptionService: transcriptionService
+        )
+        await viewModel.checkPermissions()
+        await viewModel.startRecording()
+        await viewModel.stopRecording()
+
+        async let first: Void = viewModel.transcribeLatestRecording()
+        async let second: Void = viewModel.transcribeLatestRecording()
+        _ = await (first, second)
+
+        XCTAssertEqual(transcriptionService.requests.count, 1)
+    }
+
     fileprivate static func validation(passed: Bool) -> ValidationResult {
         ValidationResult(
             passed: passed,
@@ -284,5 +390,45 @@ private final class FakeFilePresenter: FilePresenting, @unchecked Sendable {
 
     func revealInFinder(_ url: URL) {
         revealedURLs.append(url)
+    }
+}
+
+private enum FakeTranscriptionError: LocalizedError {
+    case failed
+
+    var errorDescription: String? {
+        "转写失败"
+    }
+}
+
+private final class FakeTranscriptionService: TranscriptionServicing, @unchecked Sendable {
+    private(set) var requests: [TranscriptionRequest] = []
+    var result: TranscriptionResult
+    var error: Error?
+    var delayNanoseconds: UInt64
+
+    init(
+        result: TranscriptionResult = TranscriptionResult(
+            text: "默认转写文本",
+            transcriptURL: FileManager.default.temporaryDirectory.appendingPathComponent("transcript.txt"),
+            metadataURL: FileManager.default.temporaryDirectory.appendingPathComponent("transcript.json")
+        ),
+        error: Error? = nil,
+        delayNanoseconds: UInt64 = 0
+    ) {
+        self.result = result
+        self.error = error
+        self.delayNanoseconds = delayNanoseconds
+    }
+
+    func transcribe(_ request: TranscriptionRequest) async throws -> TranscriptionResult {
+        requests.append(request)
+        if delayNanoseconds > 0 {
+            try await Task.sleep(nanoseconds: delayNanoseconds)
+        }
+        if let error {
+            throw error
+        }
+        return result
     }
 }

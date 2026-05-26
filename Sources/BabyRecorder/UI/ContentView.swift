@@ -16,6 +16,8 @@ struct ContentView: View {
                 outputPanel
             }
 
+            transcriptionPanel
+
             if presentation.showsFailureMessage, let message = presentation.failureMessage {
                 Text(message)
                     .font(.callout)
@@ -161,6 +163,55 @@ struct ContentView: View {
         .panelStyle()
     }
 
+    private var transcriptionPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                Text("section.transcription")
+                    .font(.headline)
+                Spacer()
+                Picker("label.transcriptionModel", selection: $viewModel.selectedTranscriptionModel) {
+                    Text("transcription.model.fast")
+                        .tag(TranscriptionModel.fast)
+                    Text("transcription.model.accurate")
+                        .tag(TranscriptionModel.accurate)
+                }
+                .labelsHidden()
+                .frame(width: 160)
+                .disabled(viewModel.transcription.status == .running)
+
+                Button {
+                    Task { await viewModel.transcribeLatestRecording() }
+                } label: {
+                    Label(transcriptionActionKey, systemImage: "text.magnifyingglass")
+                }
+                .buttonStyle(.bordered)
+                .disabled(!viewModel.canTranscribe)
+            }
+
+            labeledRow(
+                title: "label.transcriptionState",
+                value: transcriptionStatusKey,
+                status: transcriptionTone
+            )
+
+            Text(transcriptionMessageKey)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if viewModel.transcription.text.isEmpty == false {
+                Text(viewModel.transcription.text)
+                    .font(.body)
+                    .textSelection(.enabled)
+                    .lineLimit(5)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+            }
+        }
+        .panelStyle()
+    }
+
     private enum StatusTone {
         case neutral
         case success
@@ -197,6 +248,49 @@ struct ContentView: View {
         case .notAvailable:
             .neutral
         case .passed:
+            .success
+        case .failed:
+            .failure
+        }
+    }
+
+    private var transcriptionActionKey: LocalizedStringKey {
+        viewModel.transcription.status == .failed ? "transcription.action.retry" : "transcription.action.start"
+    }
+
+    private var transcriptionStatusKey: LocalizedStringKey {
+        switch viewModel.transcription.status {
+        case .idle:
+            "transcription.status.idle"
+        case .running:
+            "transcription.status.running"
+        case .completed:
+            "transcription.status.completed"
+        case .failed:
+            "transcription.status.failed"
+        }
+    }
+
+    private var transcriptionMessageKey: LocalizedStringKey {
+        switch viewModel.transcription.status {
+        case .idle:
+            viewModel.outputDirectory == nil ? "transcription.message.waitingForRecording" : "transcription.message.ready"
+        case .running:
+            "transcription.message.running"
+        case .completed:
+            "transcription.message.completed"
+        case .failed:
+            "transcription.message.failed"
+        }
+    }
+
+    private var transcriptionTone: StatusTone {
+        switch viewModel.transcription.status {
+        case .idle:
+            .neutral
+        case .running:
+            .warning
+        case .completed:
             .success
         case .failed:
             .failure

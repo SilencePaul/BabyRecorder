@@ -12,6 +12,9 @@
 "recording.action.openSettings" = "Open Settings";
 "recording.action.recheck" = "Re-check";
 "recording.action.showInFinder" = "Show in Finder";
+"transcription.action.start" = "Start Transcription";
+"transcription.action.retry" = "Retry Transcription";
+"transcription.action.latest" = "Transcribe Latest Recording";
 
 "recording.state.checkingPermissions.title" = "Checking Permissions";
 "recording.state.checkingPermissions.subtitle" = "Confirming Screen Recording and Microphone access.";
@@ -39,7 +42,10 @@
 
 "section.permissions" = "Permissions and Status";
 "section.output" = "Latest Output";
+"section.transcription" = "Speech to Text";
 "label.recordingState" = "Recording State";
+"label.transcriptionState" = "Transcription State";
+"label.transcriptionModel" = "Transcription Model";
 "label.validation" = "Validation";
 "label.diagnostics" = "Diagnostics";
 "label.outputDirectory" = "Save Location";
@@ -48,6 +54,22 @@
 "validation.passed" = "Passed";
 "validation.failed" = "Failed";
 "diagnostics.sessionJSON" = "session.json";
+"transcription.status.idle" = "Not Started";
+"transcription.status.running" = "Transcribing";
+"transcription.status.completed" = "Completed";
+"transcription.status.failed" = "Failed";
+"transcription.model.fast" = "Fast 0.6B";
+"transcription.model.accurate" = "Accurate 1.7B";
+"transcription.message.waitingForRecording" = "After recording finishes, click Start Transcription.";
+"transcription.message.ready" = "Uses the local Qwen3-ASR fast model. The model loads only after you click, then memory is released when it finishes.";
+"transcription.message.running" = "Loading the local speech model and transcribing audio. This usually takes a few seconds to tens of seconds; keep the app open.";
+"transcription.message.completed" = "Generated transcript.txt and transcript.json in the output folder.";
+"transcription.message.failed" = "Transcription did not finish. Confirm .venv-asr and the model are installed, then retry.";
+"transcription.error.engineUnavailable" = "Transcription engine is unavailable.";
+"transcription.error.missingAudio %@" = "Audio file not found: %@";
+"transcription.error.missingEnvironment" = ".venv-asr was not found. Install the Python MLX transcription environment first.";
+"transcription.error.processFailed" = "The transcription process failed.";
+"transcription.error.missingTranscript" = "Transcription finished but transcript.txt was not generated.";
 
 "quit.confirm.title" = "Recording in Progress";
 "quit.confirm.message" = "Quitting will stop the current recording. Are you sure you want to quit?";

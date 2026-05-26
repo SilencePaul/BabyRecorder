@@ -5,7 +5,10 @@ import SwiftUI
 struct BabyRecorderApp: App {
     @NSApplicationDelegateAdaptor(AppLifecycleDelegate.self) private var appDelegate
     @Environment(\.openWindow) private var openWindow
-    @StateObject private var viewModel = RecordingViewModel(captureService: CaptureService())
+    @StateObject private var viewModel = RecordingViewModel(
+        captureService: CaptureService(),
+        transcriptionService: PythonMLXTranscriptionService()
+    )
 
     var body: some Scene {
         Window("app.title", id: "main") {
@@ -46,6 +49,12 @@ struct BabyRecorderApp: App {
                 }
                 .keyboardShortcut("f", modifiers: [.command, .shift])
                 .disabled(!viewModel.canRevealOutputDirectory)
+
+                Button("transcription.action.start") {
+                    Task { await viewModel.transcribeLatestRecording() }
+                }
+                .keyboardShortcut("t", modifiers: [.command, .shift])
+                .disabled(!viewModel.canTranscribe)
             }
 
             CommandGroup(after: .windowArrangement) {
@@ -77,7 +86,7 @@ struct BabyRecorderApp: App {
         case .permissionsMissing, .failed, .finishedWithMixFailure:
             "exclamationmark.circle"
         default:
-            "waveform"
+            viewModel.transcription.status == .running ? "text.magnifyingglass" : "waveform"
         }
     }
 

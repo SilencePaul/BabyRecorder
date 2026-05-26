@@ -12,6 +12,9 @@
 "recording.action.openSettings" = "打开设置";
 "recording.action.recheck" = "重新检查";
 "recording.action.showInFinder" = "在 Finder 显示";
+"transcription.action.start" = "开始转写";
+"transcription.action.retry" = "重新转写";
+"transcription.action.latest" = "转写最新录音";
 
 "recording.state.checkingPermissions.title" = "正在检查权限";
 "recording.state.checkingPermissions.subtitle" = "正在确认屏幕录制和麦克风权限。";
@@ -39,7 +42,10 @@
 
 "section.permissions" = "权限和状态";
 "section.output" = "最近输出";
+"section.transcription" = "语音转文字";
 "label.recordingState" = "录制状态";
+"label.transcriptionState" = "转写状态";
+"label.transcriptionModel" = "转写模型";
 "label.validation" = "校验结果";
 "label.diagnostics" = "诊断文件";
 "label.outputDirectory" = "保存位置";
@@ -48,6 +54,22 @@
 "validation.passed" = "通过";
 "validation.failed" = "失败";
 "diagnostics.sessionJSON" = "session.json";
+"transcription.status.idle" = "未开始";
+"transcription.status.running" = "正在转写";
+"transcription.status.completed" = "已完成";
+"transcription.status.failed" = "失败";
+"transcription.model.fast" = "快速 0.6B";
+"transcription.model.accurate" = "高准确率 1.7B";
+"transcription.message.waitingForRecording" = "录制完成后，可以点击开始转写。";
+"transcription.message.ready" = "使用本地 Qwen3-ASR 快速模型，点击后才会加载模型，完成后会释放内存。";
+"transcription.message.running" = "正在加载本地语音模型并转写音频，通常需要几秒到几十秒，请保持 App 打开。";
+"transcription.message.completed" = "已生成 transcript.txt 和 transcript.json，可在输出目录查看。";
+"transcription.message.failed" = "转写没有完成，请确认 .venv-asr 和模型已安装后重试。";
+"transcription.error.engineUnavailable" = "转写引擎不可用";
+"transcription.error.missingAudio %@" = "找不到音频文件：%@";
+"transcription.error.missingEnvironment" = "找不到 .venv-asr，请先安装 Python MLX 转写环境。";
+"transcription.error.processFailed" = "转写进程失败";
+"transcription.error.missingTranscript" = "转写完成但没有生成 transcript.txt。";
 
 "quit.confirm.title" = "正在录制";
 "quit.confirm.message" = "退出会停止当前录制。确定要退出吗？";
