@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "BabyRecorder",
+    defaultLocalization: "zh-Hans",
     platforms: [
         .macOS(.v15)
     ],
@@ -13,6 +14,9 @@ let package = Package(
         .executableTarget(
             name: "BabyRecorder",
             path: "Sources/BabyRecorder",
+            resources: [
+                .process("Resources")
+            ],
             linkerSettings: [
                 .linkedFramework("AppKit"),
                 .linkedFramework("AVFoundation"),

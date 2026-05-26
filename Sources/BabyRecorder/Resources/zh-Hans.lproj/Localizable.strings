@@ -1,0 +1,55 @@
+"app.title" = "宝宝录音";
+"menu.recording" = "录制";
+"menu.openMainWindow" = "打开主窗口";
+"menu.recheckPermissions" = "重新检查权限";
+"menu.openSystemSettings" = "打开系统设置";
+"menu.revealLatestOutput" = "显示最近输出";
+"menu.quit" = "退出宝宝录音";
+"menu.status" = "状态";
+
+"recording.action.start" = "开始";
+"recording.action.stop" = "停止";
+"recording.action.openSettings" = "打开设置";
+"recording.action.recheck" = "重新检查";
+"recording.action.showInFinder" = "在 Finder 显示";
+
+"recording.state.checkingPermissions.title" = "正在检查权限";
+"recording.state.checkingPermissions.subtitle" = "正在确认屏幕录制和麦克风权限。";
+"recording.state.permissionsMissing.title" = "权限不足";
+"recording.state.permissionsMissing.subtitle" = "请开启屏幕录制和麦克风权限，然后重新检查。";
+"recording.state.ready.title" = "准备录制";
+"recording.state.ready.subtitle" = "系统声音和麦克风已就绪。点击开始后，窗口可关闭，录制会继续在状态栏运行。";
+"recording.state.starting.title" = "正在开始";
+"recording.state.starting.subtitle" = "正在准备录音文件和系统音频捕获。";
+"recording.state.recording.title" = "正在录制";
+"recording.state.recording.subtitle" = "可以关闭窗口，录制会继续在状态栏运行。";
+"recording.state.stopping.title" = "正在停止";
+"recording.state.stopping.subtitle" = "正在保存音频、混音并写入诊断文件。";
+"recording.state.finished.title" = "录制完成";
+"recording.state.finished.subtitle" = "音频文件已保存，可以在 Finder 中查看。";
+"recording.state.mixFailure.title" = "录制完成，混音失败";
+"recording.state.mixFailure.subtitle" = "原始系统声音和麦克风文件已保留，请查看输出目录。";
+"recording.state.failed.title" = "录制失败";
+"recording.state.failed.subtitle" = "录制没有完成，请查看错误信息后重试。";
+
+"permission.screenRecording" = "屏幕录制权限";
+"permission.microphone" = "麦克风权限";
+"permission.status.ready" = "已就绪";
+"permission.status.missing" = "缺失";
+
+"section.permissions" = "权限和状态";
+"section.output" = "最近输出";
+"label.recordingState" = "录制状态";
+"label.validation" = "校验结果";
+"label.diagnostics" = "诊断文件";
+"label.outputDirectory" = "保存位置";
+"label.noOutput" = "还没有输出";
+"validation.notAvailable" = "未生成";
+"validation.passed" = "通过";
+"validation.failed" = "失败";
+"diagnostics.sessionJSON" = "session.json";
+
+"quit.confirm.title" = "正在录制";
+"quit.confirm.message" = "退出会停止当前录制。确定要退出吗？";
+"quit.confirm.quit" = "退出";
+"quit.confirm.cancel" = "继续录制";

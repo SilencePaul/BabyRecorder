@@ -1,0 +1,55 @@
+"app.title" = "Baby Recorder";
+"menu.recording" = "Recording";
+"menu.openMainWindow" = "Open Main Window";
+"menu.recheckPermissions" = "Re-check Permissions";
+"menu.openSystemSettings" = "Open System Settings";
+"menu.revealLatestOutput" = "Reveal Latest Output";
+"menu.quit" = "Quit Baby Recorder";
+"menu.status" = "Status";
+
+"recording.action.start" = "Start";
+"recording.action.stop" = "Stop";
+"recording.action.openSettings" = "Open Settings";
+"recording.action.recheck" = "Re-check";
+"recording.action.showInFinder" = "Show in Finder";
+
+"recording.state.checkingPermissions.title" = "Checking Permissions";
+"recording.state.checkingPermissions.subtitle" = "Confirming Screen Recording and Microphone access.";
+"recording.state.permissionsMissing.title" = "Permissions Missing";
+"recording.state.permissionsMissing.subtitle" = "Enable Screen Recording and Microphone access, then re-check.";
+"recording.state.ready.title" = "Ready to Record";
+"recording.state.ready.subtitle" = "System audio and microphone are ready. Recording continues from the menu bar if you close the window.";
+"recording.state.starting.title" = "Starting";
+"recording.state.starting.subtitle" = "Preparing audio files and system capture.";
+"recording.state.recording.title" = "Recording";
+"recording.state.recording.subtitle" = "You can close the window; recording continues from the menu bar.";
+"recording.state.stopping.title" = "Stopping";
+"recording.state.stopping.subtitle" = "Saving audio, mixing tracks, and writing diagnostics.";
+"recording.state.finished.title" = "Recording Finished";
+"recording.state.finished.subtitle" = "Audio files are saved and ready to reveal in Finder.";
+"recording.state.mixFailure.title" = "Recorded, Mix Failed";
+"recording.state.mixFailure.subtitle" = "Original system and microphone files were preserved in the output folder.";
+"recording.state.failed.title" = "Recording Failed";
+"recording.state.failed.subtitle" = "The recording did not finish. Review the error and try again.";
+
+"permission.screenRecording" = "Screen Recording";
+"permission.microphone" = "Microphone";
+"permission.status.ready" = "Ready";
+"permission.status.missing" = "Missing";
+
+"section.permissions" = "Permissions and Status";
+"section.output" = "Latest Output";
+"label.recordingState" = "Recording State";
+"label.validation" = "Validation";
+"label.diagnostics" = "Diagnostics";
+"label.outputDirectory" = "Save Location";
+"label.noOutput" = "No output yet";
+"validation.notAvailable" = "Not generated";
+"validation.passed" = "Passed";
+"validation.failed" = "Failed";
+"diagnostics.sessionJSON" = "session.json";
+
+"quit.confirm.title" = "Recording in Progress";
+"quit.confirm.message" = "Quitting will stop the current recording. Are you sure you want to quit?";
+"quit.confirm.quit" = "Quit";
+"quit.confirm.cancel" = "Keep Recording";
