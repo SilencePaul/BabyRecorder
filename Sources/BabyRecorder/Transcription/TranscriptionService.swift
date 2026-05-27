@@ -93,16 +93,29 @@ struct PythonMLXTranscriptionService: TranscriptionServicing {
         }
 
         var processEnvironment = environment
-        processEnvironment["QWEN3_ASR_MODEL"] = request.model.rawValue
         processEnvironment["HOME"] = processEnvironment["HOME"] ?? NSHomeDirectory()
         processEnvironment["PATH"] = processEnvironment["PATH"] ?? "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
         processEnvironment["PYTHONUNBUFFERED"] = "1"
+        processEnvironment["SHELL"] = "/bin/zsh"
 
         let result = try await processRunner.run(
-            executableURL: URL(fileURLWithPath: "/bin/bash"),
-            arguments: [scriptURL.path, request.sessionDirectory.path],
+            executableURL: URL(fileURLWithPath: "/bin/zsh"),
+            arguments: [
+                "-lc",
+                Self.shellCommand(
+                    projectRoot: projectRoot,
+                    scriptURL: scriptURL,
+                    sessionDirectory: request.sessionDirectory,
+                    model: request.model
+                )
+            ],
             environment: processEnvironment,
             currentDirectoryURL: projectRoot
+        )
+        try? result.combinedOutput.write(
+            to: request.sessionDirectory.appendingPathComponent("transcription.log"),
+            atomically: true,
+            encoding: .utf8
         )
         guard result.exitCode == 0 else {
             throw TranscriptionError.processFailed(result.combinedOutput)
@@ -117,6 +130,22 @@ struct PythonMLXTranscriptionService: TranscriptionServicing {
         let text = try String(contentsOf: transcriptURL, encoding: .utf8)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return TranscriptionResult(text: text, transcriptURL: transcriptURL, metadataURL: metadataURL)
+    }
+
+    private static func shellCommand(
+        projectRoot: URL,
+        scriptURL: URL,
+        sessionDirectory: URL,
+        model: TranscriptionModel
+    ) -> String {
+        [
+            "cd \(shellQuoted(projectRoot.path))",
+            "QWEN3_ASR_MODEL=\(shellQuoted(model.rawValue)) \(shellQuoted(scriptURL.path)) \(shellQuoted(sessionDirectory.path))"
+        ].joined(separator: " && ")
+    }
+
+    private static func shellQuoted(_ value: String) -> String {
+        "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
     }
 }
 

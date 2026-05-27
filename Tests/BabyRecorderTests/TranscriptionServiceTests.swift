@@ -21,15 +21,22 @@ final class TranscriptionServiceTests: XCTestCase {
 
         XCTAssertEqual(result.text, "转写结果")
         XCTAssertEqual(result.transcriptURL, fixture.sessionDirectory.appendingPathComponent("transcript.txt"))
+        XCTAssertEqual(
+            try String(contentsOf: fixture.sessionDirectory.appendingPathComponent("transcription.log"), encoding: .utf8),
+            "ok"
+        )
         XCTAssertEqual(runner.runs, [
             ProcessRun(
-                executableURL: URL(fileURLWithPath: "/bin/bash"),
-                arguments: [fixture.scriptURL.path, fixture.sessionDirectory.path],
+                executableURL: URL(fileURLWithPath: "/bin/zsh"),
+                arguments: [
+                    "-lc",
+                    "cd '\(fixture.projectRoot.path)' && QWEN3_ASR_MODEL='Qwen/Qwen3-ASR-1.7B' '\(fixture.scriptURL.path)' '\(fixture.sessionDirectory.path)'"
+                ],
                 environment: [
                     "HOME": NSHomeDirectory(),
                     "PATH": "/usr/bin",
                     "PYTHONUNBUFFERED": "1",
-                    "QWEN3_ASR_MODEL": "Qwen/Qwen3-ASR-1.7B"
+                    "SHELL": "/bin/zsh"
                 ],
                 currentDirectoryURL: fixture.projectRoot
             )
@@ -75,6 +82,10 @@ final class TranscriptionServiceTests: XCTestCase {
             XCTFail("Expected process failure")
         } catch let error as TranscriptionError {
             XCTAssertEqual(error, .processFailed("stdout\nstderr"))
+            XCTAssertEqual(
+                try String(contentsOf: fixture.sessionDirectory.appendingPathComponent("transcription.log"), encoding: .utf8),
+                "stdout\nstderr"
+            )
         }
     }
 }

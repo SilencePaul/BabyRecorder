@@ -206,7 +206,7 @@ struct ContentView: View {
                     .font(.callout)
                     .foregroundStyle(.red)
                     .textSelection(.enabled)
-                    .lineLimit(4)
+                    .lineLimit(8)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(10)
                     .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
