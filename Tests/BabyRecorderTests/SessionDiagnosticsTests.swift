@@ -110,6 +110,17 @@ final class SessionDiagnosticsTests: XCTestCase {
         XCTAssertEqual(paths.sessionJSON.lastPathComponent, "session.json")
     }
 
+    func testRecordingSessionPathsDefaultBaseDirectoryIsUserWritableAppSupport() {
+        let base = RecordingSessionPaths.defaultBaseDirectory()
+
+        XCTAssertEqual(
+            base,
+            FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Library/Application Support/BabyRecorder/Recordings", isDirectory: true)
+        )
+        XCTAssertFalse(base.path.contains("/Desktop/宝宝录音App/Recordings"))
+    }
+
     func testTranscriptionModelStatusIsReadyWhenModelFileExists() throws {
         let modelDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)

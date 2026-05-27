@@ -16,7 +16,7 @@ BabyRecorder 是一个面向中文用户的 macOS 本地录音与语音转文字
 - 稳定 Bundle ID：`com.yimingliu.BabyRecorder`，用于固定系统权限项。
 - 支持麦克风 + 系统声音录制。
 - 支持状态栏驻留，关闭主窗口后继续留在菜单栏中控制。
-- 录音完成后生成会话目录、音频文件和诊断文件。
+- 录音完成后生成会话目录、音频文件和诊断文件，默认保存到当前用户的 `~/Library/Application Support/BabyRecorder/Recordings`。
 - 支持录音文件校验，便于定位权限或设备问题。
 - 支持按需语音转文字，不常驻加载模型，节省内存。
 - 默认转写模型：`Qwen/Qwen3-ASR-0.6B`。

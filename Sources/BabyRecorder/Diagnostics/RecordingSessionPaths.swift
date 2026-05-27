@@ -9,7 +9,7 @@ struct RecordingSessionPaths: Equatable {
     let sessionJSON: URL
 
     static func create(
-        baseDirectory: URL = URL(fileURLWithPath: "/Users/yimingliu/Desktop/宝宝录音App/Recordings"),
+        baseDirectory: URL = Self.defaultBaseDirectory(),
         now: Date = Date(),
         calendar: Calendar = .current
     ) throws -> RecordingSessionPaths {
@@ -30,5 +30,10 @@ struct RecordingSessionPaths: Equatable {
             mixedWav: directory.appendingPathComponent("mixed.wav"),
             sessionJSON: directory.appendingPathComponent("session.json")
         )
+    }
+
+    static func defaultBaseDirectory(fileManager: FileManager = .default) -> URL {
+        fileManager.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/BabyRecorder/Recordings", isDirectory: true)
     }
 }
