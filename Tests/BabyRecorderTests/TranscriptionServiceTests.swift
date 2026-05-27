@@ -9,7 +9,7 @@ final class TranscriptionServiceTests: XCTestCase {
         try "{}\n".write(to: fixture.sessionDirectory.appendingPathComponent("transcript.json"), atomically: true, encoding: .utf8)
         let runner = FakeProcessRunner(result: ProcessResult(exitCode: 0, standardOutput: "ok", standardError: ""))
         let service = PythonMLXTranscriptionService(
-            projectRoot: fixture.projectRoot,
+            runtimeRoot: fixture.runtimeRoot,
             scriptURL: fixture.scriptURL,
             environment: ["PATH": "/usr/bin"],
             processRunner: runner
@@ -30,15 +30,18 @@ final class TranscriptionServiceTests: XCTestCase {
                 executableURL: URL(fileURLWithPath: "/bin/zsh"),
                 arguments: [
                     "-lc",
-                    "cd '\(fixture.projectRoot.path)' && QWEN3_ASR_MODEL='Qwen/Qwen3-ASR-1.7B' '\(fixture.scriptURL.path)' '\(fixture.sessionDirectory.path)'"
+                    "cd '\(fixture.runtimeRoot.path)' && QWEN3_ASR_MODEL='Qwen/Qwen3-ASR-1.7B' '\(fixture.scriptURL.path)' '\(fixture.sessionDirectory.path)'"
                 ],
                 environment: [
+                    "HF_ENDPOINT": "https://hf-mirror.com",
+                    "HF_HOME": fixture.runtimeRoot.appendingPathComponent("huggingface").path,
+                    "HF_HUB_CACHE": fixture.runtimeRoot.appendingPathComponent("huggingface/hub").path,
                     "HOME": NSHomeDirectory(),
                     "PATH": "/usr/bin",
                     "PYTHONUNBUFFERED": "1",
                     "SHELL": "/bin/zsh"
                 ],
-                currentDirectoryURL: fixture.projectRoot
+                currentDirectoryURL: fixture.runtimeRoot
             )
         ])
     }
@@ -47,7 +50,7 @@ final class TranscriptionServiceTests: XCTestCase {
         let fixture = try TemporaryTranscriptionFixture()
         let runner = FakeProcessRunner(result: ProcessResult(exitCode: 0, standardOutput: "", standardError: ""))
         let service = PythonMLXTranscriptionService(
-            projectRoot: fixture.projectRoot,
+            runtimeRoot: fixture.runtimeRoot,
             scriptURL: fixture.scriptURL,
             processRunner: runner
         )
@@ -70,7 +73,7 @@ final class TranscriptionServiceTests: XCTestCase {
             result: ProcessResult(exitCode: 1, standardOutput: "stdout", standardError: "stderr")
         )
         let service = PythonMLXTranscriptionService(
-            projectRoot: fixture.projectRoot,
+            runtimeRoot: fixture.runtimeRoot,
             scriptURL: fixture.scriptURL,
             processRunner: runner
         )
@@ -91,14 +94,14 @@ final class TranscriptionServiceTests: XCTestCase {
 }
 
 private struct TemporaryTranscriptionFixture {
-    let projectRoot: URL
+    let runtimeRoot: URL
     let scriptURL: URL
     let sessionDirectory: URL
 
     init() throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("baby-recorder-transcription-\(UUID().uuidString)", isDirectory: true)
-        projectRoot = root
+        runtimeRoot = root
         scriptURL = root.appendingPathComponent("Scripts/transcribe_mlx_qwen3_asr.sh")
         sessionDirectory = root.appendingPathComponent("Recordings/session", isDirectory: true)
         try FileManager.default.createDirectory(

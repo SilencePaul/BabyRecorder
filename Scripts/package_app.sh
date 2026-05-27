@@ -23,6 +23,9 @@ cp .build/debug/BabyRecorder "$MACOS/BabyRecorder"
 cp Info.plist "$CONTENTS/Info.plist"
 if [ -d "$ROOT/Sources/BabyRecorder/Resources" ]; then
   cp -R "$ROOT/Sources/BabyRecorder/Resources/"* "$RESOURCES/"
+  if [ -f "$RESOURCES/Scripts/transcribe_mlx_qwen3_asr.sh" ]; then
+    chmod +x "$RESOURCES/Scripts/transcribe_mlx_qwen3_asr.sh"
+  fi
 fi
 xattr -cr "$STAGED_APP_DIR"
 ditto --noextattr --noqtn "$STAGED_APP_DIR" "$APP_DIR"

@@ -53,29 +53,29 @@ struct NoOpTranscriptionService: TranscriptionServicing {
 }
 
 struct PythonMLXTranscriptionService: TranscriptionServicing {
-    var projectRoot: URL
+    var runtimeRoot: URL
     var scriptURL: URL
     var environment: [String: String]
     var processRunner: ProcessRunning
 
     init(
-        projectRoot: URL = URL(fileURLWithPath: "/Users/yimingliu/Desktop/宝宝录音App", isDirectory: true),
+        runtimeRoot: URL = BabyRecorderRuntimePaths.defaultRuntimeRoot(),
         environment: [String: String] = ProcessInfo.processInfo.environment,
         processRunner: ProcessRunning = SystemProcessRunner()
     ) {
-        self.projectRoot = projectRoot
-        self.scriptURL = projectRoot.appendingPathComponent("Scripts/transcribe_mlx_qwen3_asr.sh")
+        self.runtimeRoot = runtimeRoot
+        self.scriptURL = BabyRecorderRuntimePaths.transcriptionScriptURL(runtimeRoot: runtimeRoot)
         self.environment = environment
         self.processRunner = processRunner
     }
 
     init(
-        projectRoot: URL,
+        runtimeRoot: URL,
         scriptURL: URL,
         environment: [String: String] = ProcessInfo.processInfo.environment,
         processRunner: ProcessRunning = SystemProcessRunner()
     ) {
-        self.projectRoot = projectRoot
+        self.runtimeRoot = runtimeRoot
         self.scriptURL = scriptURL
         self.environment = environment
         self.processRunner = processRunner
@@ -87,7 +87,7 @@ struct PythonMLXTranscriptionService: TranscriptionServicing {
             throw TranscriptionError.missingAudio(audioURL)
         }
 
-        let pythonURL = projectRoot.appendingPathComponent(".venv-asr/bin/python")
+        let pythonURL = runtimeRoot.appendingPathComponent(".venv-asr/bin/python")
         guard FileManager.default.fileExists(atPath: pythonURL.path) else {
             throw TranscriptionError.missingEnvironment(pythonURL)
         }
@@ -97,20 +97,23 @@ struct PythonMLXTranscriptionService: TranscriptionServicing {
         processEnvironment["PATH"] = processEnvironment["PATH"] ?? "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
         processEnvironment["PYTHONUNBUFFERED"] = "1"
         processEnvironment["SHELL"] = "/bin/zsh"
+        processEnvironment["HF_HOME"] = runtimeRoot.appendingPathComponent("huggingface").path
+        processEnvironment["HF_HUB_CACHE"] = runtimeRoot.appendingPathComponent("huggingface/hub").path
+        processEnvironment["HF_ENDPOINT"] = processEnvironment["HF_ENDPOINT"] ?? "https://hf-mirror.com"
 
         let result = try await processRunner.run(
             executableURL: URL(fileURLWithPath: "/bin/zsh"),
             arguments: [
                 "-lc",
                 Self.shellCommand(
-                    projectRoot: projectRoot,
+                    runtimeRoot: runtimeRoot,
                     scriptURL: scriptURL,
                     sessionDirectory: request.sessionDirectory,
                     model: request.model
                 )
             ],
             environment: processEnvironment,
-            currentDirectoryURL: projectRoot
+            currentDirectoryURL: runtimeRoot
         )
         try? result.combinedOutput.write(
             to: request.sessionDirectory.appendingPathComponent("transcription.log"),
@@ -133,19 +136,33 @@ struct PythonMLXTranscriptionService: TranscriptionServicing {
     }
 
     private static func shellCommand(
-        projectRoot: URL,
+        runtimeRoot: URL,
         scriptURL: URL,
         sessionDirectory: URL,
         model: TranscriptionModel
     ) -> String {
         [
-            "cd \(shellQuoted(projectRoot.path))",
+            "cd \(shellQuoted(runtimeRoot.path))",
             "QWEN3_ASR_MODEL=\(shellQuoted(model.rawValue)) \(shellQuoted(scriptURL.path)) \(shellQuoted(sessionDirectory.path))"
         ].joined(separator: " && ")
     }
 
     private static func shellQuoted(_ value: String) -> String {
         "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
+    }
+}
+
+enum BabyRecorderRuntimePaths {
+    static func defaultRuntimeRoot(fileManager: FileManager = .default) -> URL {
+        if let applicationSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            return applicationSupport.appendingPathComponent("BabyRecorder", isDirectory: true)
+        }
+        return URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+            .appendingPathComponent("Library/Application Support/BabyRecorder", isDirectory: true)
+    }
+
+    static func transcriptionScriptURL(runtimeRoot: URL) -> URL {
+        runtimeRoot.appendingPathComponent("Scripts/transcribe_mlx_qwen3_asr.sh")
     }
 }
 
