@@ -25,7 +25,12 @@ final class TranscriptionServiceTests: XCTestCase {
             ProcessRun(
                 executableURL: URL(fileURLWithPath: "/bin/bash"),
                 arguments: [fixture.scriptURL.path, fixture.sessionDirectory.path],
-                environment: ["PATH": "/usr/bin", "QWEN3_ASR_MODEL": "Qwen/Qwen3-ASR-1.7B"],
+                environment: [
+                    "HOME": NSHomeDirectory(),
+                    "PATH": "/usr/bin",
+                    "PYTHONUNBUFFERED": "1",
+                    "QWEN3_ASR_MODEL": "Qwen/Qwen3-ASR-1.7B"
+                ],
                 currentDirectoryURL: fixture.projectRoot
             )
         ])

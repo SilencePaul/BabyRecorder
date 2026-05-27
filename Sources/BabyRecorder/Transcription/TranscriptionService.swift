@@ -94,6 +94,9 @@ struct PythonMLXTranscriptionService: TranscriptionServicing {
 
         var processEnvironment = environment
         processEnvironment["QWEN3_ASR_MODEL"] = request.model.rawValue
+        processEnvironment["HOME"] = processEnvironment["HOME"] ?? NSHomeDirectory()
+        processEnvironment["PATH"] = processEnvironment["PATH"] ?? "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        processEnvironment["PYTHONUNBUFFERED"] = "1"
 
         let result = try await processRunner.run(
             executableURL: URL(fileURLWithPath: "/bin/bash"),

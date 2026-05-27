@@ -199,6 +199,19 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if viewModel.transcription.status == .failed,
+               let errorMessage = viewModel.transcription.errorMessage,
+               errorMessage.isEmpty == false {
+                Text(errorMessage)
+                    .font(.callout)
+                    .foregroundStyle(.red)
+                    .textSelection(.enabled)
+                    .lineLimit(4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+            }
+
             if viewModel.transcription.text.isEmpty == false {
                 Text(viewModel.transcription.text)
                     .font(.body)
