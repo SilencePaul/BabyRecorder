@@ -4,6 +4,7 @@ Recordings/
 .venv-asr/
 /build/
 /build
+/dist/
 /Models/*.bin
 /Models/*.mlmodelc
 /Transcripts/*
