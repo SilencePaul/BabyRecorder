@@ -18,9 +18,10 @@ else
 fi
 
 AUDIO_PATH="${SESSION_DIR}/mixed.wav"
+ASR_AUDIO_PATH="${SESSION_DIR}/asr_input.wav"
 MODEL_ID="${QWEN3_ASR_MODEL:-Qwen/Qwen3-ASR-0.6B}"
 LANGUAGE="${QWEN3_ASR_LANGUAGE:-Chinese}"
-RAW_JSON="${SESSION_DIR}/mixed.json"
+RAW_JSON="${SESSION_DIR}/asr_input.json"
 TRANSCRIPT_JSON="${SESSION_DIR}/transcript.json"
 TRANSCRIPT_TXT="${SESSION_DIR}/transcript.txt"
 
@@ -55,9 +56,21 @@ echo "Model: ${MODEL_ID}"
 echo "Language: ${LANGUAGE}"
 echo "HF_HOME: ${HF_HOME:-<default>}"
 echo "HF_ENDPOINT: ${HF_ENDPOINT:-<default>}"
+echo "Preparing ASR input: ${ASR_AUDIO_PATH}"
+
+ffmpeg \
+  -hide_banner \
+  -loglevel error \
+  -y \
+  -i "${AUDIO_PATH}" \
+  -vn \
+  -ac 1 \
+  -ar 16000 \
+  -sample_fmt s16 \
+  "${ASR_AUDIO_PATH}"
 
 "${CLI_BIN}" \
-  "${AUDIO_PATH}" \
+  "${ASR_AUDIO_PATH}" \
   --model "${MODEL_ID}" \
   --language "${LANGUAGE}" \
   --output-dir "${SESSION_DIR}" \

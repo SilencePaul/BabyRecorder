@@ -177,6 +177,25 @@ EOF
   echo "ffmpeg runtime ready: $wrapper"
 }
 
+verify_runtime() {
+  local venv_python="$1"
+  local cli="$RUNTIME_ROOT/.venv-asr/bin/mlx-qwen3-asr"
+
+  echo "Verifying transcription runtime..."
+  "$venv_python" - <<'PY'
+import importlib.metadata as metadata
+import imageio_ffmpeg
+
+for package in ("mlx-qwen3-asr", "mlx", "mlx-metal", "imageio-ffmpeg", "huggingface-hub"):
+    print(f"{package}: {metadata.version(package)}")
+
+print(f"imageio ffmpeg: {imageio_ffmpeg.get_ffmpeg_exe()}")
+PY
+  "$cli" --help >/dev/null
+  PATH="$RUNTIME_ROOT/bin:$PATH" ffmpeg -version >/dev/null
+  echo "Transcription runtime verification passed."
+}
+
 echo "Installing BabyRecorder app..."
 bash "$ROOT/Scripts/install_app.sh" >/dev/null
 
@@ -199,6 +218,7 @@ fi
 echo "Installing MLX ASR dependencies..."
 run_pip_install "$RUNTIME_ROOT/.venv-asr/bin/python"
 install_ffmpeg_wrapper "$RUNTIME_ROOT/.venv-asr/bin/python"
+verify_runtime "$RUNTIME_ROOT/.venv-asr/bin/python"
 
 if [[ "$WARM_MODEL" == "1" ]]; then
   echo "Warming Qwen3-ASR-0.6B model cache via: $HF_ENDPOINT_VALUE"

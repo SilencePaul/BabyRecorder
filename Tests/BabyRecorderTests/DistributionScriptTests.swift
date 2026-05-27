@@ -14,6 +14,9 @@ final class DistributionScriptTests: XCTestCase {
         XCTAssertTrue(installerText.contains("Contents/Resources/Scripts/transcribe_mlx_qwen3_asr.sh"))
         XCTAssertTrue(installerText.contains("imageio-ffmpeg"))
         XCTAssertTrue(installerText.contains("install_ffmpeg_wrapper"))
+        XCTAssertTrue(installerText.contains("verify_runtime"))
+        XCTAssertTrue(installerText.contains("mlx-qwen3-asr"))
+        XCTAssertTrue(installerText.contains("ffmpeg -version"))
         XCTAssertFalse(installerText.contains("Scripts/install_app.sh"))
         XCTAssertFalse(installerText.contains("swift build"))
 
@@ -41,6 +44,12 @@ final class DistributionScriptTests: XCTestCase {
 
         XCTAssertTrue(text.contains("export PATH=\"${ROOT_DIR}/bin:${PATH}\""))
         XCTAssertTrue(text.contains("command -v ffmpeg"))
+        XCTAssertTrue(text.contains("ASR_AUDIO_PATH=\"${SESSION_DIR}/asr_input.wav\""))
+        XCTAssertTrue(text.contains("-ac 1"))
+        XCTAssertTrue(text.contains("-ar 16000"))
+        XCTAssertTrue(text.contains("-sample_fmt s16"))
+        XCTAssertTrue(text.contains("\"${ASR_AUDIO_PATH}\""))
+        XCTAssertTrue(text.contains("RAW_JSON=\"${SESSION_DIR}/asr_input.json\""))
     }
 
     private func packageRoot() -> URL {
