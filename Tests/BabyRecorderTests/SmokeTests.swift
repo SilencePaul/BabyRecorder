@@ -25,6 +25,19 @@ final class SmokeTests: XCTestCase {
         XCTAssertEqual(plist["LSMinimumSystemVersion"] as? String, "26.4.1")
     }
 
+    func testAppIconIsConfigured() throws {
+        let plist = try infoPlist()
+
+        XCTAssertEqual(plist["CFBundleIconFile"] as? String, "BabyRecorder.icns")
+        XCTAssertTrue(
+            FileManager.default.fileExists(
+                atPath: packageRoot()
+                    .appendingPathComponent("Sources/BabyRecorder/Resources/BabyRecorder.icns")
+                    .path
+            )
+        )
+    }
+
     private func infoPlistStrings(for localization: String) throws -> [String: Any] {
         let stringsURL = packageRoot()
             .appendingPathComponent("Sources/BabyRecorder/Resources")
