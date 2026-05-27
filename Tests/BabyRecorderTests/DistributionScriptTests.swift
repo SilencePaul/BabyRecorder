@@ -12,6 +12,8 @@ final class DistributionScriptTests: XCTestCase {
         let installerText = try String(contentsOf: installer, encoding: .utf8)
         XCTAssertTrue(installerText.contains("BabyRecorder.app"))
         XCTAssertTrue(installerText.contains("Contents/Resources/Scripts/transcribe_mlx_qwen3_asr.sh"))
+        XCTAssertTrue(installerText.contains("imageio-ffmpeg"))
+        XCTAssertTrue(installerText.contains("install_ffmpeg_wrapper"))
         XCTAssertFalse(installerText.contains("Scripts/install_app.sh"))
         XCTAssertFalse(installerText.contains("swift build"))
 
@@ -30,6 +32,15 @@ final class DistributionScriptTests: XCTestCase {
         XCTAssertTrue(text.contains("一键安装"))
         XCTAssertTrue(text.contains("Qwen3-ASR"))
         XCTAssertTrue(text.contains("中国大陆"))
+    }
+
+    func testTranscriptionScriptUsesBundledRuntimeFfmpegFirst() throws {
+        let script = packageRoot()
+            .appendingPathComponent("Sources/BabyRecorder/Resources/Scripts/transcribe_mlx_qwen3_asr.sh")
+        let text = try String(contentsOf: script, encoding: .utf8)
+
+        XCTAssertTrue(text.contains("export PATH=\"${ROOT_DIR}/bin:${PATH}\""))
+        XCTAssertTrue(text.contains("command -v ffmpeg"))
     }
 
     private func packageRoot() -> URL {

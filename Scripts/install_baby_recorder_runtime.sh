@@ -125,11 +125,11 @@ run_pip_install_once() {
     uv pip install \
       --python "$venv_python" \
       --index-url "$index_url" \
-      --upgrade pip setuptools wheel mlx-qwen3-asr
+      --upgrade pip setuptools wheel mlx-qwen3-asr imageio-ffmpeg
   else
     "$venv_python" -m pip install \
       --index-url "$index_url" \
-      --upgrade pip setuptools wheel mlx-qwen3-asr
+      --upgrade pip setuptools wheel mlx-qwen3-asr imageio-ffmpeg
   fi
 }
 
@@ -155,6 +155,28 @@ run_pip_install() {
   exit 1
 }
 
+install_ffmpeg_wrapper() {
+  local venv_python="$1"
+  local wrapper="$RUNTIME_ROOT/bin/ffmpeg"
+
+  mkdir -p "$RUNTIME_ROOT/bin"
+  cat > "$wrapper" <<EOF
+#!/usr/bin/env bash
+exec "$venv_python" - "\$@" <<'PY'
+import os
+import sys
+import imageio_ffmpeg
+
+ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+os.execv(ffmpeg, [ffmpeg, *sys.argv[1:]])
+PY
+EOF
+  chmod +x "$wrapper"
+
+  "$wrapper" -version >/dev/null
+  echo "ffmpeg runtime ready: $wrapper"
+}
+
 echo "Installing BabyRecorder app..."
 bash "$ROOT/Scripts/install_app.sh" >/dev/null
 
@@ -176,6 +198,7 @@ fi
 
 echo "Installing MLX ASR dependencies..."
 run_pip_install "$RUNTIME_ROOT/.venv-asr/bin/python"
+install_ffmpeg_wrapper "$RUNTIME_ROOT/.venv-asr/bin/python"
 
 if [[ "$WARM_MODEL" == "1" ]]; then
   echo "Warming Qwen3-ASR-0.6B model cache via: $HF_ENDPOINT_VALUE"

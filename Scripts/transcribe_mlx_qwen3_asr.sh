@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON_BIN="${ROOT_DIR}/.venv-asr/bin/python"
 CLI_BIN="${ROOT_DIR}/.venv-asr/bin/mlx-qwen3-asr"
+export PATH="${ROOT_DIR}/bin:${PATH}"
 
 if [[ $# -gt 0 ]]; then
   SESSION_DIR="$1"
@@ -33,6 +34,11 @@ fi
 if [[ ! -f "${AUDIO_PATH}" ]]; then
   echo "Missing audio file: ${AUDIO_PATH}" >&2
   echo "Usage: Scripts/transcribe_mlx_qwen3_asr.sh /path/to/recording-session" >&2
+  exit 1
+fi
+
+if ! command -v ffmpeg >/dev/null 2>&1; then
+  echo "Missing ffmpeg runtime. Re-run install_baby_recorder_runtime.sh and retry." >&2
   exit 1
 fi
 

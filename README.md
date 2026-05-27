@@ -23,6 +23,7 @@ BabyRecorder 是一个面向中文用户的 macOS 本地录音与语音转文字
 - 可切换高精度模型：`Qwen/Qwen3-ASR-1.7B`。
 - Python/MLX 运行环境放在 `~/Library/Application Support/BabyRecorder`，不依赖开发目录。
 - 安装脚本适配中国大陆网络环境：Python、PyPI、Hugging Face 均配置了可用镜像或 fallback。
+- 转写所需的 `ffmpeg` 会随 Python 运行时一起准备，不要求最终用户单独安装 Homebrew。
 
 ## 一键安装
 
