@@ -49,6 +49,17 @@ The detector should require two signals:
 
 Example keywords may include Chinese and English meeting terms such as `会议`, `腾讯会议`, `飞书会议`, `DingTalk Meeting`, `Meeting`, `共享屏幕`, and similar client-specific strings. The implementation should avoid generic terms that commonly appear outside meetings unless combined with a supported app identity.
 
+## Prior Art And API Notes
+
+This design is based on public macOS APIs and common open-source patterns for reading running app and window metadata:
+
+- Apple's `NSWorkspace.runningApplications` exposes currently running apps. Apple notes it can be observed with KVO, so the implementation can combine app-change notifications with lightweight polling for window-title changes.
+- Apple's Accessibility APIs expose `AXUIElementCopyAttributeValue`, `AXIsProcessTrusted`, and related functions for reading another app's window attributes when the user has granted permission.
+- Existing Swift examples and wrappers commonly read `kAXWindowsAttribute` from an app-level accessibility element, then inspect window attributes such as title, size, or position.
+- `CGWindowListCopyWindowInfo` can provide on-screen window dictionaries and names, but title availability depends on macOS privacy behavior. The implementation should treat missing titles as an unavailable detection signal, not as proof that no meeting is active.
+
+These references support the two-signal design: identify supported running apps first, then inspect window metadata only when macOS permits it. They also support keeping the detection provider behind a protocol so tests do not depend on real installed apps or Accessibility permission state.
+
 ## macOS Integration
 
 The provider can use public macOS APIs:
