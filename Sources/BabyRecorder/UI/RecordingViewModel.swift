@@ -32,6 +32,7 @@ final class RecordingViewModel: ObservableObject {
     @Published private(set) var validation: ValidationResult?
     @Published private(set) var transcription = TranscriptionSnapshot.idle
     @Published var selectedTranscriptionModel: TranscriptionModel
+    @Published var selectedTranscriptionMode: TranscriptionMode
 
     private let permissionService: PermissionServicing
     private let captureService: CaptureServicing
@@ -43,13 +44,15 @@ final class RecordingViewModel: ObservableObject {
         captureService: CaptureServicing,
         filePresenter: FilePresenting = FinderFilePresenter(),
         transcriptionService: TranscriptionServicing = NoOpTranscriptionService(),
-        transcriptionModel: TranscriptionModel = .fast
+        transcriptionModel: TranscriptionModel = .fast,
+        transcriptionMode: TranscriptionMode = .mixed
     ) {
         self.permissionService = permissionService
         self.captureService = captureService
         self.filePresenter = filePresenter
         self.transcriptionService = transcriptionService
         self.selectedTranscriptionModel = transcriptionModel
+        self.selectedTranscriptionMode = transcriptionMode
     }
 
     var canStartRecording: Bool {
@@ -152,7 +155,7 @@ final class RecordingViewModel: ObservableObject {
         transcription = TranscriptionSnapshot(status: .running)
         do {
             let result = try await transcriptionService.transcribe(
-                TranscriptionRequest(sessionDirectory: outputDirectory, model: selectedTranscriptionModel)
+                TranscriptionRequest(sessionDirectory: outputDirectory, model: selectedTranscriptionModel, mode: selectedTranscriptionMode)
             )
             transcription = TranscriptionSnapshot(
                 status: .completed,

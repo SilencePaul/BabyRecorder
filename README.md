@@ -19,6 +19,7 @@ BabyRecorder 是一个面向中文用户的 macOS 本地录音与语音转文字
 - 录音完成后生成会话目录、音频文件和诊断文件，默认保存到当前用户的 `~/Library/Application Support/BabyRecorder/Recordings`。
 - 支持录音文件校验，便于定位权限或设备问题。
 - 支持按需语音转文字，不常驻加载模型，节省内存。
+- 支持“完整转写”和“分角色对话”两种转写模式；分角色模式会把 `mic.wav` 标为“我”，把 `system.wav` 标为“对方”，按时间顺序合并成对话稿。
 - 默认转写模型：`Qwen/Qwen3-ASR-0.6B`。
 - 可切换高精度模型：`Qwen/Qwen3-ASR-1.7B`。
 - Python/MLX 运行环境放在 `~/Library/Application Support/BabyRecorder`，不依赖开发目录。
@@ -93,6 +94,13 @@ Scripts/install_baby_recorder_runtime.sh
 5. App 读取 `transcript.txt` 和 `transcript.json` 并展示状态。
 
 这样不会像常驻服务一样长期占用统一内存，更适合日常 Mac 使用。
+
+转写模式：
+
+- `完整转写`：转写混合音轨 `mixed.wav`，输出 `transcript.txt` 和 `transcript.json`。
+- `分角色对话`：分别转写 `mic.wav` 和 `system.wav`，再按 Qwen JSON 中的 chunk 时间戳合并，输出 `transcript_dialogue.txt`、`transcript_dialogue.json`、`transcript_me.txt` 和 `transcript_other.txt`。
+
+分角色对话模式不做复杂的多人声纹识别。它依赖 BabyRecorder 录制时天然分开的两条音轨：本机麦克风是“我”，系统声音是“对方”。这比在混合音频里猜说话人更稳定，也更适合腾讯会议这类场景。
 
 ## 目录说明
 

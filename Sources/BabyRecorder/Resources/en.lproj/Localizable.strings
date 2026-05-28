@@ -46,6 +46,7 @@
 "label.recordingState" = "Recording State";
 "label.transcriptionState" = "Transcription State";
 "label.transcriptionModel" = "Transcription Model";
+"label.transcriptionMode" = "Transcription Mode";
 "label.validation" = "Validation";
 "label.diagnostics" = "Diagnostics";
 "label.outputDirectory" = "Save Location";
@@ -60,10 +61,12 @@
 "transcription.status.failed" = "Failed";
 "transcription.model.fast" = "Fast 0.6B";
 "transcription.model.accurate" = "Accurate 1.7B";
+"transcription.mode.mixed" = "Full Transcript";
+"transcription.mode.dialogue" = "Role Dialogue";
 "transcription.message.waitingForRecording" = "After recording finishes, click Start Transcription.";
 "transcription.message.ready" = "Uses the local Qwen3-ASR fast model. The model loads only after you click, then memory is released when it finishes.";
 "transcription.message.running" = "Loading the local speech model and transcribing audio. This usually takes a few seconds to tens of seconds; keep the app open.";
-"transcription.message.completed" = "Generated transcript.txt and transcript.json in the output folder.";
+"transcription.message.completed" = "Generated transcript files in the output folder.";
 "transcription.message.failed" = "Transcription did not finish. Confirm .venv-asr and the model are installed, then retry.";
 "transcription.error.engineUnavailable" = "Transcription engine is unavailable.";
 "transcription.error.missingAudio %@" = "Audio file not found: %@";

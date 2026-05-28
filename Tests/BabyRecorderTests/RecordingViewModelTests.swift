@@ -260,6 +260,39 @@ final class RecordingViewModelTests: XCTestCase {
         XCTAssertEqual(transcription.transcriptURL, outputDirectory.appendingPathComponent("transcript.txt"))
     }
 
+    func testDialogueTranscriptionModeIsPassedToService() async {
+        let outputDirectory = URL(fileURLWithPath: "/tmp/baby-recorder-tests/dialogue", isDirectory: true)
+        let transcriptionService = FakeTranscriptionService(
+            result: TranscriptionResult(
+                text: "[00:00:01] 我：你好",
+                transcriptURL: outputDirectory.appendingPathComponent("transcript_dialogue.txt"),
+                metadataURL: outputDirectory.appendingPathComponent("transcript_dialogue.json")
+            )
+        )
+        let captureService = FakeCaptureService(
+            stopResult: RecordingCompletion(
+                outputDirectory: outputDirectory,
+                validation: Self.validation(passed: true),
+                mixFailed: false
+            )
+        )
+        let viewModel = await RecordingViewModel(
+            permissionService: FakePermissionService(screen: true, mic: true),
+            captureService: captureService,
+            transcriptionService: transcriptionService
+        )
+        await viewModel.checkPermissions()
+        await viewModel.startRecording()
+        await viewModel.stopRecording()
+        await MainActor.run {
+            viewModel.selectedTranscriptionMode = .dialogue
+        }
+
+        await viewModel.transcribeLatestRecording()
+
+        XCTAssertEqual(transcriptionService.requests.map(\.mode), [.dialogue])
+    }
+
     func testTranscriptionFailureStoresRetryableError() async {
         let outputDirectory = URL(fileURLWithPath: "/tmp/baby-recorder-tests/transcribe-fail", isDirectory: true)
         let transcriptionService = FakeTranscriptionService(error: FakeTranscriptionError.failed)

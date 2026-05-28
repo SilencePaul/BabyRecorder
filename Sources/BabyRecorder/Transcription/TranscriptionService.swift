@@ -14,9 +14,24 @@ enum TranscriptionModel: String, Equatable, Sendable {
     }
 }
 
+enum TranscriptionMode: String, Equatable, Sendable {
+    case mixed
+    case dialogue
+
+    var labelKey: String {
+        switch self {
+        case .mixed:
+            "transcription.mode.mixed"
+        case .dialogue:
+            "transcription.mode.dialogue"
+        }
+    }
+}
+
 struct TranscriptionRequest: Equatable, Sendable {
     var sessionDirectory: URL
     var model: TranscriptionModel
+    var mode: TranscriptionMode = .mixed
 }
 
 struct TranscriptionResult: Equatable, Sendable {
@@ -82,10 +97,7 @@ struct PythonMLXTranscriptionService: TranscriptionServicing {
     }
 
     func transcribe(_ request: TranscriptionRequest) async throws -> TranscriptionResult {
-        let audioURL = request.sessionDirectory.appendingPathComponent("mixed.wav")
-        guard FileManager.default.fileExists(atPath: audioURL.path) else {
-            throw TranscriptionError.missingAudio(audioURL)
-        }
+        try validateAudioFiles(for: request)
 
         let pythonURL = runtimeRoot.appendingPathComponent(".venv-asr/bin/python")
         guard FileManager.default.fileExists(atPath: pythonURL.path) else {
@@ -109,7 +121,8 @@ struct PythonMLXTranscriptionService: TranscriptionServicing {
                     runtimeRoot: runtimeRoot,
                     scriptURL: scriptURL,
                     sessionDirectory: request.sessionDirectory,
-                    model: request.model
+                    model: request.model,
+                    mode: request.mode
                 )
             ],
             environment: processEnvironment,
@@ -124,8 +137,8 @@ struct PythonMLXTranscriptionService: TranscriptionServicing {
             throw TranscriptionError.processFailed(result.combinedOutput)
         }
 
-        let transcriptURL = request.sessionDirectory.appendingPathComponent("transcript.txt")
-        let metadataURL = request.sessionDirectory.appendingPathComponent("transcript.json")
+        let transcriptURL = request.sessionDirectory.appendingPathComponent(request.mode.transcriptFileName)
+        let metadataURL = request.sessionDirectory.appendingPathComponent(request.mode.metadataFileName)
         guard FileManager.default.fileExists(atPath: transcriptURL.path) else {
             throw TranscriptionError.missingTranscript(transcriptURL)
         }
@@ -139,16 +152,55 @@ struct PythonMLXTranscriptionService: TranscriptionServicing {
         runtimeRoot: URL,
         scriptURL: URL,
         sessionDirectory: URL,
-        model: TranscriptionModel
+        model: TranscriptionModel,
+        mode: TranscriptionMode
     ) -> String {
         [
             "cd \(shellQuoted(runtimeRoot.path))",
-            "QWEN3_ASR_MODEL=\(shellQuoted(model.rawValue)) \(shellQuoted(scriptURL.path)) \(shellQuoted(sessionDirectory.path))"
+            "QWEN3_ASR_MODEL=\(shellQuoted(model.rawValue)) QWEN3_ASR_MODE=\(shellQuoted(mode.rawValue)) \(shellQuoted(scriptURL.path)) \(shellQuoted(sessionDirectory.path))"
         ].joined(separator: " && ")
     }
 
     private static func shellQuoted(_ value: String) -> String {
         "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
+    }
+
+    private func validateAudioFiles(for request: TranscriptionRequest) throws {
+        for fileName in request.mode.requiredAudioFileNames {
+            let audioURL = request.sessionDirectory.appendingPathComponent(fileName)
+            guard FileManager.default.fileExists(atPath: audioURL.path) else {
+                throw TranscriptionError.missingAudio(audioURL)
+            }
+        }
+    }
+}
+
+private extension TranscriptionMode {
+    var requiredAudioFileNames: [String] {
+        switch self {
+        case .mixed:
+            ["mixed.wav"]
+        case .dialogue:
+            ["mic.wav", "system.wav"]
+        }
+    }
+
+    var transcriptFileName: String {
+        switch self {
+        case .mixed:
+            "transcript.txt"
+        case .dialogue:
+            "transcript_dialogue.txt"
+        }
+    }
+
+    var metadataFileName: String {
+        switch self {
+        case .mixed:
+            "transcript.json"
+        case .dialogue:
+            "transcript_dialogue.json"
+        }
     }
 }
 

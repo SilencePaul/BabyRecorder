@@ -30,7 +30,7 @@ final class TranscriptionServiceTests: XCTestCase {
                 executableURL: URL(fileURLWithPath: "/bin/zsh"),
                 arguments: [
                     "-lc",
-                    "cd '\(fixture.runtimeRoot.path)' && QWEN3_ASR_MODEL='Qwen/Qwen3-ASR-1.7B' '\(fixture.scriptURL.path)' '\(fixture.sessionDirectory.path)'"
+                    "cd '\(fixture.runtimeRoot.path)' && QWEN3_ASR_MODEL='Qwen/Qwen3-ASR-1.7B' QWEN3_ASR_MODE='mixed' '\(fixture.scriptURL.path)' '\(fixture.sessionDirectory.path)'"
                 ],
                 environment: [
                     "HF_ENDPOINT": "https://hf-mirror.com",
@@ -44,6 +44,30 @@ final class TranscriptionServiceTests: XCTestCase {
                 currentDirectoryURL: fixture.runtimeRoot
             )
         ])
+    }
+
+    func testPythonMLXServiceRunsDialogueModeWithSelectedModel() async throws {
+        let fixture = try TemporaryTranscriptionFixture()
+        try "mic".write(to: fixture.sessionDirectory.appendingPathComponent("mic.wav"), atomically: true, encoding: .utf8)
+        try "system".write(to: fixture.sessionDirectory.appendingPathComponent("system.wav"), atomically: true, encoding: .utf8)
+        try "对话稿\n".write(to: fixture.sessionDirectory.appendingPathComponent("transcript_dialogue.txt"), atomically: true, encoding: .utf8)
+        try "{}\n".write(to: fixture.sessionDirectory.appendingPathComponent("transcript_dialogue.json"), atomically: true, encoding: .utf8)
+        let runner = FakeProcessRunner(result: ProcessResult(exitCode: 0, standardOutput: "ok", standardError: ""))
+        let service = PythonMLXTranscriptionService(
+            runtimeRoot: fixture.runtimeRoot,
+            scriptURL: fixture.scriptURL,
+            processRunner: runner
+        )
+
+        let result = try await service.transcribe(
+            TranscriptionRequest(sessionDirectory: fixture.sessionDirectory, model: .fast, mode: .dialogue)
+        )
+
+        XCTAssertEqual(result.text, "对话稿")
+        XCTAssertEqual(result.transcriptURL, fixture.sessionDirectory.appendingPathComponent("transcript_dialogue.txt"))
+        XCTAssertEqual(result.metadataURL, fixture.sessionDirectory.appendingPathComponent("transcript_dialogue.json"))
+        XCTAssertEqual(runner.runs.count, 1)
+        XCTAssertTrue(runner.runs[0].arguments[1].contains("QWEN3_ASR_MODE='dialogue'"))
     }
 
     func testPythonMLXServiceFailsBeforeRunningWhenMixedAudioIsMissing() async throws {
@@ -62,6 +86,27 @@ final class TranscriptionServiceTests: XCTestCase {
             XCTFail("Expected missing audio error")
         } catch let error as TranscriptionError {
             XCTAssertEqual(error, .missingAudio(fixture.sessionDirectory.appendingPathComponent("mixed.wav")))
+            XCTAssertEqual(runner.runs, [])
+        }
+    }
+
+    func testPythonMLXServiceFailsBeforeRunningDialogueModeWhenTrackIsMissing() async throws {
+        let fixture = try TemporaryTranscriptionFixture()
+        try "mic".write(to: fixture.sessionDirectory.appendingPathComponent("mic.wav"), atomically: true, encoding: .utf8)
+        let runner = FakeProcessRunner(result: ProcessResult(exitCode: 0, standardOutput: "", standardError: ""))
+        let service = PythonMLXTranscriptionService(
+            runtimeRoot: fixture.runtimeRoot,
+            scriptURL: fixture.scriptURL,
+            processRunner: runner
+        )
+
+        do {
+            _ = try await service.transcribe(
+                TranscriptionRequest(sessionDirectory: fixture.sessionDirectory, model: .fast, mode: .dialogue)
+            )
+            XCTFail("Expected missing system audio error")
+        } catch let error as TranscriptionError {
+            XCTAssertEqual(error, .missingAudio(fixture.sessionDirectory.appendingPathComponent("system.wav")))
             XCTAssertEqual(runner.runs, [])
         }
     }

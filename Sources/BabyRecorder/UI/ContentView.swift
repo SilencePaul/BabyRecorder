@@ -169,6 +169,16 @@ struct ContentView: View {
                 Text("section.transcription")
                     .font(.headline)
                 Spacer()
+                Picker("label.transcriptionMode", selection: $viewModel.selectedTranscriptionMode) {
+                    Text("transcription.mode.mixed")
+                        .tag(TranscriptionMode.mixed)
+                    Text("transcription.mode.dialogue")
+                        .tag(TranscriptionMode.dialogue)
+                }
+                .labelsHidden()
+                .frame(width: 150)
+                .disabled(viewModel.transcription.status == .running)
+
                 Picker("label.transcriptionModel", selection: $viewModel.selectedTranscriptionModel) {
                     Text("transcription.model.fast")
                         .tag(TranscriptionModel.fast)

@@ -50,6 +50,13 @@ final class DistributionScriptTests: XCTestCase {
         XCTAssertTrue(text.contains("-sample_fmt s16"))
         XCTAssertTrue(text.contains("\"${ASR_AUDIO_PATH}\""))
         XCTAssertTrue(text.contains("RAW_JSON=\"${SESSION_DIR}/asr_input.json\""))
+        XCTAssertTrue(text.contains("QWEN3_ASR_MODE"))
+        XCTAssertTrue(text.contains("transcribe_track"))
+        XCTAssertTrue(text.contains("mic_asr.json"))
+        XCTAssertTrue(text.contains("system_asr.json"))
+        XCTAssertTrue(text.contains("transcript_dialogue.txt"))
+        XCTAssertTrue(text.contains("speaker\": speaker"))
+        XCTAssertTrue(text.contains("is_filler_only"))
     }
 
     private func packageRoot() -> URL {
