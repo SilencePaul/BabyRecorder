@@ -64,6 +64,8 @@ dist/BabyRecorder-Install.zip
 
 ## 本地开发
 
+项目级开发规则见 [`AGENTS.md`](AGENTS.md)。其中记录了当前 workspace 路径、开发流程、测试/打包命令，以及“项目描述必须随功能实时更新”的要求。
+
 构建和测试：
 
 ```bash
