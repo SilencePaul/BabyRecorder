@@ -10,14 +10,16 @@ struct WindowCloseHider: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
-        DispatchQueue.main.async {
+        Task { @MainActor in
+            await Task.yield()
             attachCoordinator(context.coordinator, to: view.window)
         }
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async {
+        Task { @MainActor in
+            await Task.yield()
             attachCoordinator(context.coordinator, to: nsView.window)
         }
     }

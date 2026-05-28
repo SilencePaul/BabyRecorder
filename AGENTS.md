@@ -9,7 +9,7 @@ These rules apply to the whole repository.
 - Active development branch: `codex/baby-recorder-mvp`
 - GitHub `main` is updated by pushing `codex/baby-recorder-mvp:main`.
 
-Do not assume another similarly named directory is the active workspace. If the shell starts elsewhere, change to `/Users/yimingliu/Desktop/宝宝录音App` before running project commands.
+Do not assume another similarly named directory is the active workspace. If the shell starts elsewhere, change to `/Users/yimingliu/Desktop/宝宝录音App` before running project commands. In particular, `/Users/yimingliu/Documents/mac端录音&转文字` is obsolete and must not be used for this project.
 
 ## Product Context
 
@@ -39,10 +39,10 @@ At minimum, check:
 
 - `README.md`
 - `AGENTS.md` when the development flow or project rules change
-- `Scripts/make_distribution.sh` generated installation README content, if user installation steps change
+- `Scripts/make_distribution.sh`, if user installation steps change
 - `docs/superpowers/specs` and `docs/superpowers/plans` for major feature designs/plans
 
-When a new release zip is generated, remind the user that `dist/BabyRecorder-Install.zip` is local and must be uploaded/replaced in GitHub Release manually.
+When a new release DMG is generated, remind the user that `dist/BabyRecorder.dmg` is local and must be uploaded/replaced in GitHub Release manually.
 
 ## Verification Before Completion
 
@@ -52,7 +52,7 @@ Common commands:
 
 ```bash
 swift test
-bash -n Scripts/install_distribution.sh Scripts/install_baby_recorder_runtime.sh Scripts/transcribe_mlx_qwen3_asr.sh Sources/BabyRecorder/Resources/Scripts/transcribe_mlx_qwen3_asr.sh Scripts/make_distribution.sh
+bash -n Scripts/install_distribution.sh Scripts/install_baby_recorder_runtime.sh Scripts/transcribe_mlx_qwen3_asr.sh Sources/BabyRecorder/Resources/Scripts/transcribe_mlx_qwen3_asr.sh Sources/BabyRecorder/Resources/Scripts/setup_baby_recorder_runtime.sh Scripts/make_distribution.sh
 Scripts/make_distribution.sh
 ```
 
@@ -68,9 +68,9 @@ QWEN3_ASR_MODE=dialogue "$RUNTIME/Scripts/transcribe_mlx_qwen3_asr.sh" "$SESSION
 ## Packaging And Release
 
 - Build the distributable with `Scripts/make_distribution.sh`.
-- The generated zip is `dist/BabyRecorder-Install.zip`.
+- The generated DMG is `dist/BabyRecorder.dmg`.
 - `dist/` is intentionally not committed.
-- Source pushes do not update GitHub Release assets. The release zip must be uploaded manually after packaging.
+- Source pushes do not update GitHub Release assets. The release DMG must be uploaded manually after packaging.
 
 ## Git Flow
 

@@ -28,23 +28,16 @@ BabyRecorder 是一个面向中文用户的 macOS 本地录音与语音转文字
 
 ## 一键安装
 
-给最终用户安装时，不建议让她 clone 源码后自己编译。推荐从 GitHub Release 下载 `BabyRecorder-Install.zip`。
-
-安装包内容：
-
-- `BabyRecorder.app`
-- `install_baby_recorder_runtime.sh`
-- `README_安装说明.md`
+给最终用户安装时，不建议让她 clone 源码后自己编译。推荐从 GitHub Release 下载 `BabyRecorder.dmg`。
 
 安装步骤：
 
-1. 下载并解压 `BabyRecorder-Install.zip`。
-2. 进入解压后的 `BabyRecorder-Install` 文件夹。
-3. 运行 `install_baby_recorder_runtime.sh`。
-4. 打开 `~/Applications/BabyRecorder.app`。
-5. 授予“麦克风”和“录屏与系统录音”权限。
+- 打开 `BabyRecorder.dmg`。
+- 把 `BabyRecorder.app` 拖到 `Applications`。
+- 第一次打开 App 时，它会在应用内自动准备 Python、MLX 依赖、`ffmpeg` 和默认模型。
+- 准备完成后，按 macOS 提示授予“麦克风”和“录屏与系统录音”权限。
 
-第一次安装会下载 Python 3.13、MLX ASR 依赖和默认模型。之后 App 只有在点击“开始转写”时才会启动转写进程。
+第一次启动会下载 Python 3.13、MLX ASR 依赖和默认模型。之后 App 只有在点击“开始转写”时才会启动转写进程。
 
 ## 开发者打包
 
@@ -57,10 +50,10 @@ Scripts/make_distribution.sh
 脚本会生成：
 
 ```text
-dist/BabyRecorder-Install.zip
+dist/BabyRecorder.dmg
 ```
 
-这个 zip 可以上传到 GitHub Release，最终用户下载它即可安装。
+这个 DMG 可以上传到 GitHub Release，最终用户下载后拖拽安装即可。
 
 ## 本地开发
 
@@ -84,6 +77,8 @@ Scripts/install_app.sh
 ```bash
 Scripts/install_baby_recorder_runtime.sh
 ```
+
+最终用户不需要运行这个脚本；正式安装包会在 App 首次启动时自动准备转写运行环境。
 
 ## 语音转文字架构
 

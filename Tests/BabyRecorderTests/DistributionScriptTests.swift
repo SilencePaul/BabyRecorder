@@ -1,29 +1,27 @@
 import XCTest
 
 final class DistributionScriptTests: XCTestCase {
-    func testDistributionScriptsAreStandalone() throws {
+    func testDistributionBuildsDmgWithRuntimeSetupInsideTheApp() throws {
         let root = packageRoot()
-        let installer = root.appendingPathComponent("Scripts/install_distribution.sh")
         let packager = root.appendingPathComponent("Scripts/make_distribution.sh")
+        let runtimeSetup = root.appendingPathComponent("Sources/BabyRecorder/Resources/Scripts/setup_baby_recorder_runtime.sh")
 
-        XCTAssertTrue(FileManager.default.fileExists(atPath: installer.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: packager.path))
-
-        let installerText = try String(contentsOf: installer, encoding: .utf8)
-        XCTAssertTrue(installerText.contains("BabyRecorder.app"))
-        XCTAssertTrue(installerText.contains("Contents/Resources/Scripts/transcribe_mlx_qwen3_asr.sh"))
-        XCTAssertTrue(installerText.contains("imageio-ffmpeg"))
-        XCTAssertTrue(installerText.contains("install_ffmpeg_wrapper"))
-        XCTAssertTrue(installerText.contains("verify_runtime"))
-        XCTAssertTrue(installerText.contains("mlx-qwen3-asr"))
-        XCTAssertTrue(installerText.contains("ffmpeg -version"))
-        XCTAssertFalse(installerText.contains("Scripts/install_app.sh"))
-        XCTAssertFalse(installerText.contains("swift build"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: runtimeSetup.path))
 
         let packagerText = try String(contentsOf: packager, encoding: .utf8)
-        XCTAssertTrue(packagerText.contains("README_安装说明.md"))
-        XCTAssertTrue(packagerText.contains("BabyRecorder-Install.zip"))
+        XCTAssertTrue(packagerText.contains("BabyRecorder.dmg"))
+        XCTAssertTrue(packagerText.contains("create-dmg"))
+        XCTAssertFalse(packagerText.contains("install_baby_recorder_runtime.sh"))
+        XCTAssertFalse(packagerText.contains("BabyRecorder-Install.zip"))
         XCTAssertTrue(packagerText.contains("tail -n 1"))
+
+        let runtimeSetupText = try String(contentsOf: runtimeSetup, encoding: .utf8)
+        XCTAssertTrue(runtimeSetupText.contains("imageio-ffmpeg"))
+        XCTAssertTrue(runtimeSetupText.contains("install_ffmpeg_wrapper"))
+        XCTAssertTrue(runtimeSetupText.contains("verify_runtime"))
+        XCTAssertTrue(runtimeSetupText.contains("mlx-qwen3-asr"))
+        XCTAssertTrue(runtimeSetupText.contains("ffmpeg -version"))
     }
 
     func testRepositoryReadmeCoversInstallAndProjectBackground() throws {

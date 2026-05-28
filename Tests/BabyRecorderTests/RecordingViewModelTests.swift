@@ -457,7 +457,7 @@ private final class FakeTranscriptionService: TranscriptionServicing, @unchecked
     func transcribe(_ request: TranscriptionRequest) async throws -> TranscriptionResult {
         requests.append(request)
         if delayNanoseconds > 0 {
-            try await Task.sleep(nanoseconds: delayNanoseconds)
+            try await Task.sleep(for: .nanoseconds(Int64(delayNanoseconds)))
         }
         if let error {
             throw error

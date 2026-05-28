@@ -74,6 +74,22 @@
 "transcription.error.processFailed" = "The transcription process failed.";
 "transcription.error.missingTranscript" = "Transcription finished but transcript.txt was not generated.";
 
+"runtimeSetup.title.checking" = "Checking Transcription Components";
+"runtimeSetup.title.installing" = "Preparing Transcription Components";
+"runtimeSetup.title.ready" = "Transcription Components Ready";
+"runtimeSetup.title.failed" = "Transcription Setup Failed";
+"runtimeSetup.message.installing" = "First launch prepares Python, MLX dependencies, ffmpeg, and the default Qwen3-ASR model. This only needs to happen once; download time depends on your network.";
+"runtimeSetup.message.ready" = "Local transcription components are ready.";
+"runtimeSetup.message.failed" = "Check your network connection and try again. If macOS asks for an administrator password, it is installing the Python runtime.";
+"runtimeSetup.status.checking" = "Checking the local runtime";
+"runtimeSetup.status.installing" = "Downloading and installing; keep the app open";
+"runtimeSetup.status.ready" = "Ready to record and transcribe";
+"runtimeSetup.status.failed" = "Setup did not complete";
+"runtimeSetup.action.retry" = "Retry";
+"runtimeSetup.log.starting" = "Starting local transcription runtime setup...";
+"runtimeSetup.error.processFailed" = "The transcription setup script failed.";
+"runtimeSetup.error.incomplete" = "The setup script finished, but the runtime is still incomplete.";
+
 "quit.confirm.title" = "Recording in Progress";
 "quit.confirm.message" = "Quitting will stop the current recording. Are you sure you want to quit?";
 "quit.confirm.quit" = "Quit";

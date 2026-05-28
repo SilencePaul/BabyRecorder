@@ -74,6 +74,22 @@
 "transcription.error.processFailed" = "转写进程失败";
 "transcription.error.missingTranscript" = "转写完成但没有生成 transcript.txt。";
 
+"runtimeSetup.title.checking" = "正在检查转写组件";
+"runtimeSetup.title.installing" = "正在准备转写组件";
+"runtimeSetup.title.ready" = "转写组件已就绪";
+"runtimeSetup.title.failed" = "转写组件安装失败";
+"runtimeSetup.message.installing" = "首次启动需要准备 Python、MLX 依赖、ffmpeg 和默认 Qwen3-ASR 模型。这个过程只需要做一次，下载时间取决于网络。";
+"runtimeSetup.message.ready" = "本地转写组件已经准备好。";
+"runtimeSetup.message.failed" = "请检查网络连接后重试。如果系统请求管理员密码，是为了安装 Python 运行时。";
+"runtimeSetup.status.checking" = "正在检查本地运行环境";
+"runtimeSetup.status.installing" = "正在下载和安装，请保持 App 打开";
+"runtimeSetup.status.ready" = "可以开始录音和转写";
+"runtimeSetup.status.failed" = "没有完成安装";
+"runtimeSetup.action.retry" = "重试";
+"runtimeSetup.log.starting" = "开始准备本地转写运行环境...";
+"runtimeSetup.error.processFailed" = "转写组件安装脚本失败。";
+"runtimeSetup.error.incomplete" = "安装脚本已结束，但运行环境仍不完整。";
+
 "quit.confirm.title" = "正在录制";
 "quit.confirm.message" = "退出会停止当前录制。确定要退出吗？";
 "quit.confirm.quit" = "退出";

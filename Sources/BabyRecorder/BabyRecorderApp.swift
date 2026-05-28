@@ -5,18 +5,16 @@ import SwiftUI
 struct BabyRecorderApp: App {
     @NSApplicationDelegateAdaptor(AppLifecycleDelegate.self) private var appDelegate
     @Environment(\.openWindow) private var openWindow
-    @StateObject private var viewModel = RecordingViewModel(
+    @State private var viewModel = RecordingViewModel(
         captureService: CaptureService(),
         transcriptionService: PythonMLXTranscriptionService()
     )
+    @State private var runtimeSetupViewModel = RuntimeSetupViewModel()
 
     var body: some Scene {
         Window("app.title", id: "main") {
-            ContentView(viewModel: viewModel)
+            RootView(recordingViewModel: viewModel, runtimeSetupViewModel: runtimeSetupViewModel)
                 .background(WindowCloseHider())
-                .task {
-                    await viewModel.checkPermissions()
-                }
                 .onAppear {
                     appDelegate.viewModel = viewModel
                 }
@@ -97,7 +95,8 @@ struct BabyRecorderApp: App {
         }
 
         openWindow(id: "main")
-        DispatchQueue.main.async {
+        Task { @MainActor in
+            await Task.yield()
             _ = bringExistingMainWindowForward()
         }
     }

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct StatusBarMenuView: View {
-    @ObservedObject var viewModel: RecordingViewModel
+    let viewModel: RecordingViewModel
     let openMainWindow: () -> Void
     let quit: () -> Void
 

@@ -1,5 +1,5 @@
-import Combine
 import Foundation
+import Observation
 
 enum RecordingState: Equatable, Sendable {
     case checkingPermissions
@@ -25,14 +25,15 @@ struct RecordingCompletion: Equatable, Sendable {
 }
 
 @MainActor
-final class RecordingViewModel: ObservableObject {
-    @Published private(set) var state: RecordingState = .checkingPermissions
-    @Published private(set) var permissionStatus = PermissionStatus(screenRecordingGranted: false, microphoneGranted: false)
-    @Published private(set) var outputDirectory: URL?
-    @Published private(set) var validation: ValidationResult?
-    @Published private(set) var transcription = TranscriptionSnapshot.idle
-    @Published var selectedTranscriptionModel: TranscriptionModel
-    @Published var selectedTranscriptionMode: TranscriptionMode
+@Observable
+final class RecordingViewModel {
+    private(set) var state: RecordingState = .checkingPermissions
+    private(set) var permissionStatus = PermissionStatus(screenRecordingGranted: false, microphoneGranted: false)
+    private(set) var outputDirectory: URL?
+    private(set) var validation: ValidationResult?
+    private(set) var transcription = TranscriptionSnapshot.idle
+    var selectedTranscriptionModel: TranscriptionModel
+    var selectedTranscriptionMode: TranscriptionMode
 
     private let permissionService: PermissionServicing
     private let captureService: CaptureServicing
