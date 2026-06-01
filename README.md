@@ -16,6 +16,7 @@ BabyRecorder 是一个面向中文用户的 macOS 本地录音与语音转文字
 - 稳定 Bundle ID：`com.yimingliu.BabyRecorder`，用于固定系统权限项。
 - 支持麦克风 + 系统声音录制。
 - 支持状态栏驻留，关闭主窗口后继续留在菜单栏中控制。
+- 支持自动识别腾讯会议、飞书/Lark、钉钉的会议窗口，并在检测到会议中时自动开始录制；会议可能结束时会提示用户确认停止，不会自动切断录音。
 - 录音完成后生成会话目录、音频文件和诊断文件，默认保存到当前用户的 `~/Library/Application Support/BabyRecorder/Recordings`。
 - 支持录音文件校验，便于定位权限或设备问题。
 - 支持按需语音转文字，不常驻加载模型，节省内存。
@@ -118,3 +119,4 @@ Scripts/install_baby_recorder_runtime.sh
 - 语音模型首次下载体积较大，需要稳定网络。
 - 由于 App 目前使用 ad-hoc 签名，首次打开时 macOS 可能提示未认证开发者，需要手动允许。
 - 录屏与系统录音权限由 macOS 控制，首次授权后可能需要重新打开 App。
+- 自动会议识别依赖 macOS 允许 App 读取会议窗口标题。如果系统未授予辅助功能相关权限，BabyRecorder 会保守地不自动开始，手动录制仍可正常使用。
