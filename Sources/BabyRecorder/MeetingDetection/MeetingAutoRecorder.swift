@@ -38,6 +38,10 @@ final class MeetingAutoRecorder {
     }
 
     func tick(recordingViewModel: RecordingViewModel) async {
+        if autoStartedAppName != nil, recordingViewModel.state != .recording {
+            clearAutoStartedState()
+        }
+
         let applications = await provider.runningApplications()
         let detection = detector.detect(from: applications)
 
@@ -47,8 +51,13 @@ final class MeetingAutoRecorder {
             let appName = appName(from: detection)
             if recordingViewModel.canStartRecording {
                 await recordingViewModel.startRecording()
-                autoStartedAppName = appName
-                status = .recordingStarted(appName: appName)
+                if recordingViewModel.state == .recording {
+                    autoStartedAppName = appName
+                    status = .recordingStarted(appName: appName)
+                    observeAutoStartedRecordingState(recordingViewModel)
+                } else {
+                    clearAutoStartedState()
+                }
             } else if recordingViewModel.state == .recording {
                 if let autoStartedAppName {
                     status = .recordingStarted(appName: autoStartedAppName)
@@ -94,6 +103,24 @@ final class MeetingAutoRecorder {
 
     private func appName(from detection: MeetingDetectionSnapshot) -> String {
         detection.displayName ?? detection.app?.displayName ?? "未知会议应用"
+    }
+
+    private func observeAutoStartedRecordingState(_ recordingViewModel: RecordingViewModel) {
+        withObservationTracking {
+            _ = recordingViewModel.state
+        } onChange: { [weak self, weak recordingViewModel] in
+            Task { @MainActor in
+                guard let self, let recordingViewModel, self.autoStartedAppName != nil else {
+                    return
+                }
+
+                if recordingViewModel.state == .recording {
+                    self.observeAutoStartedRecordingState(recordingViewModel)
+                } else {
+                    self.clearAutoStartedState()
+                }
+            }
+        }
     }
 }
 

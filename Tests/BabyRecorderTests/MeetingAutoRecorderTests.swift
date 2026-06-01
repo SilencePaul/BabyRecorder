@@ -134,6 +134,74 @@ final class MeetingAutoRecorderTests: XCTestCase {
         XCTAssertFalse(autoRecorder.shouldSuggestStop)
         XCTAssertEqual(autoRecorder.status, .monitoring)
     }
+
+    func testExternalStopClearsAutoStartedOwnershipBeforeLaterManualRecording() async {
+        let captureService = FakeAutoRecordingCaptureService()
+        let viewModel = RecordingViewModel(
+            permissionService: FakeAutoRecordingPermissionService(screen: true, mic: true),
+            captureService: captureService
+        )
+        await viewModel.checkPermissions()
+        let provider = FakeMeetingApplicationProvider(snapshots: [
+            [
+                RunningApplicationSnapshot(
+                    bundleIdentifier: "com.tencent.meeting",
+                    localizedName: "腾讯会议",
+                    windowTitles: ["会议中 - 物理课"],
+                    canReadWindowMetadata: true
+                )
+            ],
+            [],
+            [],
+            []
+        ])
+        let autoRecorder = MeetingAutoRecorder(provider: provider, endSuggestionMissThreshold: 2)
+
+        await autoRecorder.tick(recordingViewModel: viewModel)
+        await viewModel.stopRecording()
+        await Task.yield()
+        await viewModel.startRecording()
+        await autoRecorder.tick(recordingViewModel: viewModel)
+        await autoRecorder.tick(recordingViewModel: viewModel)
+
+        XCTAssertFalse(autoRecorder.shouldSuggestStop)
+        XCTAssertEqual(autoRecorder.status, .monitoring)
+    }
+
+    func testFailedAutoStartDoesNotClaimRecordingOwnership() async {
+        let captureService = FakeAutoRecordingCaptureService()
+        captureService.startError = FakeAutoRecordingCaptureError.startFailed
+        let viewModel = RecordingViewModel(
+            permissionService: FakeAutoRecordingPermissionService(screen: true, mic: true),
+            captureService: captureService
+        )
+        await viewModel.checkPermissions()
+        let provider = FakeMeetingApplicationProvider(snapshots: [
+            [
+                RunningApplicationSnapshot(
+                    bundleIdentifier: "com.tencent.meeting",
+                    localizedName: "腾讯会议",
+                    windowTitles: ["会议中 - 化学课"],
+                    canReadWindowMetadata: true
+                )
+            ],
+            [],
+            []
+        ])
+        let autoRecorder = MeetingAutoRecorder(provider: provider, endSuggestionMissThreshold: 2)
+
+        await autoRecorder.tick(recordingViewModel: viewModel)
+
+        XCTAssertEqual(captureService.startCallCount, 1)
+        XCTAssertEqual(viewModel.state, .failed("startFailed"))
+        XCTAssertEqual(autoRecorder.status, .monitoring)
+
+        await autoRecorder.tick(recordingViewModel: viewModel)
+        await autoRecorder.tick(recordingViewModel: viewModel)
+
+        XCTAssertFalse(autoRecorder.shouldSuggestStop)
+        XCTAssertEqual(autoRecorder.status, .monitoring)
+    }
 }
 
 private final class FakeMeetingApplicationProvider: MeetingApplicationProviding, @unchecked Sendable {
@@ -170,12 +238,24 @@ private final class FakeAutoRecordingPermissionService: PermissionServicing, @un
     func openSystemSettings() {}
 }
 
+private enum FakeAutoRecordingCaptureError: LocalizedError {
+    case startFailed
+
+    var errorDescription: String? {
+        "startFailed"
+    }
+}
+
 private final class FakeAutoRecordingCaptureService: CaptureServicing, @unchecked Sendable {
     private(set) var startCallCount = 0
     private(set) var stopCallCount = 0
+    var startError: Error?
 
     func start(permissionSnapshot: PermissionSnapshot) async throws {
         startCallCount += 1
+        if let startError {
+            throw startError
+        }
     }
 
     func stop() async throws -> RecordingCompletion {
