@@ -64,8 +64,10 @@ final class MeetingAutoRecorder {
                 } else {
                     status = .monitoring
                 }
-            } else {
+            } else if !recordingViewModel.permissionStatus.isReady {
                 status = .blockedByRecordingPermissions
+            } else {
+                status = .monitoring
             }
 
         case .windowMetadataUnavailable:
