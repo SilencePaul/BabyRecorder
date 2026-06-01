@@ -37,6 +37,34 @@ final class MeetingDetectorTests: XCTestCase {
         XCTAssertFalse(metadata.canReadWindowMetadata)
     }
 
+    func testSystemProviderTreatsNoAXWindowsAsReadableEmptyMetadata() {
+        let read = SystemMeetingApplicationProvider.accessibilityWindowTitleRead(from: [])
+
+        XCTAssertEqual(read.titles, [])
+        XCTAssertTrue(read.readSucceeded)
+    }
+
+    func testSystemProviderTreatsAllFailedAXTitleReadsAsUnavailable() {
+        let read = SystemMeetingApplicationProvider.accessibilityWindowTitleRead(from: [nil, nil])
+        let metadata = SystemMeetingApplicationProvider.mergedWindowMetadata(
+            visibleTitles: [],
+            accessibilityRead: read
+        )
+
+        XCTAssertEqual(read.titles, [])
+        XCTAssertFalse(read.readSucceeded)
+        XCTAssertFalse(metadata.canReadWindowMetadata)
+    }
+
+    func testSystemProviderPreservesStableMergedTitleOrder() {
+        let metadata = SystemMeetingApplicationProvider.mergedWindowMetadata(
+            visibleTitles: ["A", "B"],
+            accessibilityRead: .init(titles: ["B", "C", "A", "D"], readSucceeded: true)
+        )
+
+        XCTAssertEqual(metadata.titles, ["A", "B", "C", "D"])
+    }
+
     func testSupportedAppWithoutMeetingWindowDoesNotDetectMeeting() {
         let detector = MeetingDetector()
         let snapshot = detector.detect(from: [

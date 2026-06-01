@@ -47,11 +47,34 @@ struct SystemMeetingApplicationProvider: MeetingApplicationProviding {
         visibleTitles: [String],
         accessibilityRead: AccessibilityWindowTitleRead
     ) -> WindowMetadata {
-        let mergedTitles = Array(Set(visibleTitles + accessibilityRead.titles))
+        let mergedTitles = stableMergedTitles(visibleTitles + accessibilityRead.titles)
         return WindowMetadata(
             titles: mergedTitles,
             canReadWindowMetadata: visibleTitles.isEmpty == false || accessibilityRead.readSucceeded
         )
+    }
+
+    static func accessibilityWindowTitleRead(from titleReadResults: [String?]) -> AccessibilityWindowTitleRead {
+        let titles = titleReadResults.compactMap { title -> String? in
+            guard let title, title.isEmpty == false else {
+                return nil
+            }
+            return title
+        }
+        return AccessibilityWindowTitleRead(
+            titles: titles,
+            readSucceeded: titleReadResults.isEmpty || titleReadResults.contains { $0 != nil }
+        )
+    }
+
+    private static func stableMergedTitles(_ titles: [String]) -> [String] {
+        var seenTitles = Set<String>()
+        var mergedTitles: [String] = []
+
+        for title in titles where seenTitles.insert(title).inserted {
+            mergedTitles.append(title)
+        }
+        return mergedTitles
     }
 
     private static func visibleWindowTitlesByProcessID() -> [pid_t: [String]] {
@@ -79,15 +102,14 @@ struct SystemMeetingApplicationProvider: MeetingApplicationProviding {
             return AccessibilityWindowTitleRead(titles: [], readSucceeded: false)
         }
 
-        let titles: [String] = windows.compactMap { window -> String? in
+        let titleReadResults: [String?] = windows.map { window in
             var titleValue: CFTypeRef?
             guard AXUIElementCopyAttributeValue(window, kAXTitleAttribute as CFString, &titleValue) == .success,
-                  let title = titleValue as? String,
-                  title.isEmpty == false else {
+                  let title = titleValue as? String else {
                 return nil
             }
             return title
         }
-        return AccessibilityWindowTitleRead(titles: titles, readSucceeded: true)
+        return accessibilityWindowTitleRead(from: titleReadResults)
     }
 }
