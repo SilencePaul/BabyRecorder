@@ -9,6 +9,23 @@ enum MeetingAutoRecordingStatus: Equatable, Sendable {
     case windowMetadataUnavailable(appName: String)
 }
 
+extension MeetingAutoRecordingStatus {
+    var localizedMessage: String {
+        switch self {
+        case .monitoring:
+            String(localized: "meetingAuto.status.monitoring")
+        case .recordingStarted(let appName):
+            String(format: NSLocalizedString("meetingAuto.status.recordingStarted %@", comment: ""), appName)
+        case .meetingMayHaveEnded(let appName):
+            String(format: NSLocalizedString("meetingAuto.status.mayHaveEnded %@", comment: ""), appName)
+        case .blockedByRecordingPermissions:
+            String(localized: "meetingAuto.status.blockedByPermissions")
+        case .windowMetadataUnavailable(let appName):
+            String(format: NSLocalizedString("meetingAuto.status.windowMetadataUnavailable %@", comment: ""), appName)
+        }
+    }
+}
+
 @MainActor
 @Observable
 final class MeetingAutoRecorder {
@@ -146,7 +163,7 @@ final class MeetingAutoRecorder {
     }
 
     private func appName(from detection: MeetingDetectionSnapshot) -> String {
-        detection.displayName ?? detection.app?.displayName ?? "未知会议应用"
+        detection.displayName ?? detection.app?.displayName ?? String(localized: "meetingAuto.app.unknown")
     }
 
     private func observeAutoStartedRecordingState(_ recordingViewModel: RecordingViewModel) {

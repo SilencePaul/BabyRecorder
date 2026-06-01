@@ -2,6 +2,7 @@ import SwiftUI
 
 struct StatusBarMenuView: View {
     let viewModel: RecordingViewModel
+    let meetingAutoRecorder: MeetingAutoRecorder
     let openMainWindow: () -> Void
     let quit: () -> Void
 
@@ -11,6 +12,15 @@ struct StatusBarMenuView: View {
 
     var body: some View {
         Text(LocalizedStringKey(presentation.titleKey))
+        Text(meetingAutoRecorder.status.localizedMessage)
+
+        if meetingAutoRecorder.shouldSuggestStop {
+            Button {
+                Task { await meetingAutoRecorder.confirmStop(recordingViewModel: viewModel) }
+            } label: {
+                Label("meetingAuto.action.stopRecording", systemImage: "stop.circle")
+            }
+        }
 
         Divider()
 

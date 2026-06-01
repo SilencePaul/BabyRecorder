@@ -8,7 +8,10 @@ struct RootView: View {
     var body: some View {
         switch runtimeSetupViewModel.phase {
         case .ready:
-            ContentView(viewModel: recordingViewModel)
+            ContentView(
+                recordingViewModel: recordingViewModel,
+                meetingAutoRecorder: meetingAutoRecorder
+            )
                 .task {
                     await recordingViewModel.checkPermissions()
                     meetingAutoRecorder.startMonitoring(recordingViewModel: recordingViewModel)

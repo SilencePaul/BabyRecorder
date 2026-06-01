@@ -15,6 +15,15 @@
 "transcription.action.start" = "Start Transcription";
 "transcription.action.retry" = "Retry Transcription";
 "transcription.action.latest" = "Transcribe Latest Recording";
+"meetingAuto.action.stopRecording" = "Stop Recording";
+
+"meetingAuto.label" = "Meeting Detection";
+"meetingAuto.status.monitoring" = "Automatic meeting detection: On";
+"meetingAuto.status.recordingStarted %@" = "Detected %@ and started recording";
+"meetingAuto.status.mayHaveEnded %@" = "%@ may have ended. Stop recording?";
+"meetingAuto.status.blockedByPermissions" = "Meeting detected, but recording permissions are missing";
+"meetingAuto.status.windowMetadataUnavailable %@" = "Accessibility permission is needed to detect %@ meetings";
+"meetingAuto.app.unknown" = "Meeting App";
 
 "recording.state.checkingPermissions.title" = "Checking Permissions";
 "recording.state.checkingPermissions.subtitle" = "Confirming Screen Recording and Microphone access.";

@@ -71,6 +71,7 @@ struct BabyRecorderApp: App {
         MenuBarExtra {
             StatusBarMenuView(
                 viewModel: viewModel,
+                meetingAutoRecorder: meetingAutoRecorder,
                 openMainWindow: openMainWindow,
                 quit: {
                     NSApp.terminate(nil)

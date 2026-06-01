@@ -15,6 +15,15 @@
 "transcription.action.start" = "开始转写";
 "transcription.action.retry" = "重新转写";
 "transcription.action.latest" = "转写最新录音";
+"meetingAuto.action.stopRecording" = "停止录制";
+
+"meetingAuto.label" = "自动检测会议";
+"meetingAuto.status.monitoring" = "自动检测会议：开启";
+"meetingAuto.status.recordingStarted %@" = "检测到%@，已自动开始录制";
+"meetingAuto.status.mayHaveEnded %@" = "%@可能已结束，是否停止录制？";
+"meetingAuto.status.blockedByPermissions" = "检测到会议，但录制权限不足";
+"meetingAuto.status.windowMetadataUnavailable %@" = "需要辅助功能权限才能自动识别%@";
+"meetingAuto.app.unknown" = "会议 App";
 
 "recording.state.checkingPermissions.title" = "正在检查权限";
 "recording.state.checkingPermissions.subtitle" = "正在确认屏幕录制和麦克风权限。";
