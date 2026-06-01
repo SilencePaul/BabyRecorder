@@ -21,7 +21,7 @@ final class MeetingAutoRecorder {
     private(set) var status: MeetingAutoRecordingStatus = .monitoring
 
     init(
-        provider: MeetingApplicationProviding = NoOpMeetingApplicationProvider(),
+        provider: MeetingApplicationProviding = SystemMeetingApplicationProvider(),
         detector: MeetingDetector = MeetingDetector(),
         endSuggestionMissThreshold: Int = 3
     ) {
@@ -123,11 +123,5 @@ final class MeetingAutoRecorder {
                 }
             }
         }
-    }
-}
-
-private struct NoOpMeetingApplicationProvider: MeetingApplicationProviding {
-    func runningApplications() async -> [RunningApplicationSnapshot] {
-        []
     }
 }

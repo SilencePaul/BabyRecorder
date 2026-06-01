@@ -2,6 +2,11 @@ import XCTest
 @testable import BabyRecorder
 
 final class MeetingDetectorTests: XCTestCase {
+    func testSystemProviderCanBeConstructed() {
+        let provider = SystemMeetingApplicationProvider()
+        XCTAssertNotNil(provider)
+    }
+
     func testSupportedAppWithoutMeetingWindowDoesNotDetectMeeting() {
         let detector = MeetingDetector()
         let snapshot = detector.detect(from: [
