@@ -284,6 +284,38 @@ final class MeetingAutoRecorderTests: XCTestCase {
         XCTAssertEqual(autoRecorder.status, .monitoring)
     }
 
+    func testStoppedPollingStopsRecordingStartedAfterDelayedCaptureReturns() async {
+        let captureService = DelayedAutoRecordingCaptureService()
+        let viewModel = RecordingViewModel(
+            permissionService: FakeAutoRecordingPermissionService(screen: true, mic: true),
+            captureService: captureService
+        )
+        await viewModel.checkPermissions()
+        let provider = FakeMeetingApplicationProvider(snapshots: [[
+            RunningApplicationSnapshot(
+                bundleIdentifier: "com.tencent.meeting",
+                localizedName: "腾讯会议",
+                windowTitles: ["会议中 - 地理课"],
+                canReadWindowMetadata: true
+            )
+        ]])
+        let autoRecorder = MeetingAutoRecorder(provider: provider, endSuggestionMissThreshold: 2)
+
+        autoRecorder.startMonitoring(recordingViewModel: viewModel, intervalNanoseconds: 1_000_000)
+        await captureService.waitUntilStartCount(1)
+        autoRecorder.stopMonitoring()
+        await captureService.releaseStarts()
+        try? await Task.sleep(nanoseconds: 1_000_000)
+        let startCallCount = await captureService.startCallCount
+        let stopCallCount = await captureService.stopCallCount
+
+        XCTAssertEqual(startCallCount, 1)
+        XCTAssertEqual(stopCallCount, 1)
+        XCTAssertEqual(viewModel.state, .finished)
+        XCTAssertEqual(autoRecorder.status, .monitoring)
+        XCTAssertFalse(autoRecorder.shouldSuggestStop)
+    }
+
     func testStartMonitoringDoesNotCreateDuplicatePollingTasks() async {
         let captureService = FakeAutoRecordingCaptureService()
         let viewModel = RecordingViewModel(
@@ -304,6 +336,69 @@ final class MeetingAutoRecorderTests: XCTestCase {
 
         XCTAssertEqual(entryCount, 1)
         XCTAssertEqual(captureService.startCallCount, 0)
+    }
+}
+
+private actor DelayedAutoRecordingCaptureService: CaptureServicing {
+    private var startContinuations: [CheckedContinuation<Void, Never>] = []
+    private var startEntryContinuations: [(Int, CheckedContinuation<Void, Never>)] = []
+    private(set) var startCallCount = 0
+    private(set) var stopCallCount = 0
+
+    func start(permissionSnapshot: PermissionSnapshot) async throws {
+        await withCheckedContinuation { continuation in
+            startCallCount += 1
+            startContinuations.append(continuation)
+            resumeSatisfiedStartEntryContinuations()
+        }
+    }
+
+    func stop() async throws -> RecordingCompletion {
+        stopCallCount += 1
+        return RecordingCompletion(
+            outputDirectory: FileManager.default.temporaryDirectory,
+            validation: ValidationResult(
+                passed: true,
+                checks: ValidationChecks(
+                    systemFileNonEmpty: true,
+                    micFileNonEmpty: true,
+                    mixedFileNonEmpty: true,
+                    systemBuffersPresent: true,
+                    micBuffersPresent: true
+                )
+            ),
+            mixFailed: false
+        )
+    }
+
+    func waitUntilStartCount(_ expectedStartCount: Int) async {
+        if startCallCount >= expectedStartCount {
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            startEntryContinuations.append((expectedStartCount, continuation))
+        }
+    }
+
+    func releaseStarts() {
+        let continuations = startContinuations
+        startContinuations = []
+        continuations.forEach { continuation in
+            continuation.resume()
+        }
+    }
+
+    private func resumeSatisfiedStartEntryContinuations() {
+        let readyContinuations = startEntryContinuations.filter { expectedStartCount, _ in
+            startCallCount >= expectedStartCount
+        }
+        startEntryContinuations.removeAll { expectedStartCount, _ in
+            startCallCount >= expectedStartCount
+        }
+        readyContinuations.forEach { _, continuation in
+            continuation.resume()
+        }
     }
 }
 

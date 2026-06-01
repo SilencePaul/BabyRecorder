@@ -60,6 +60,14 @@ final class MeetingAutoRecorder {
             let appName = appName(from: detection)
             if recordingViewModel.canStartRecording {
                 await recordingViewModel.startRecording()
+                if isCancelled() {
+                    if recordingViewModel.state == .recording {
+                        await recordingViewModel.stopRecording()
+                    }
+                    clearAutoStartedState()
+                    return
+                }
+
                 if recordingViewModel.state == .recording {
                     autoStartedAppName = appName
                     status = .recordingStarted(appName: appName)
