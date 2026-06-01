@@ -39,11 +39,19 @@ final class MeetingAutoRecorder {
     }
 
     func tick(recordingViewModel: RecordingViewModel) async {
+        await tick(recordingViewModel: recordingViewModel, isCancelled: { false })
+    }
+
+    private func tick(recordingViewModel: RecordingViewModel, isCancelled: () -> Bool) async {
         if autoStartedAppName != nil, recordingViewModel.state != .recording {
             clearAutoStartedState()
         }
 
         let applications = await provider.runningApplications()
+        guard !isCancelled() else {
+            return
+        }
+
         let detection = detector.detect(from: applications)
 
         switch detection.status {
@@ -111,7 +119,7 @@ final class MeetingAutoRecorder {
                 guard let self, let recordingViewModel else {
                     return
                 }
-                await self.tick(recordingViewModel: recordingViewModel)
+                await self.tick(recordingViewModel: recordingViewModel, isCancelled: { Task.isCancelled })
                 try? await Task.sleep(nanoseconds: intervalNanoseconds)
             }
         }

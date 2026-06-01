@@ -255,6 +255,56 @@ final class MeetingAutoRecorderTests: XCTestCase {
 
         XCTAssertEqual(captureService.startCallCount, 0)
     }
+
+    func testStoppedPollingDoesNotStartRecordingAfterDelayedProviderReturnsMeeting() async {
+        let captureService = FakeAutoRecordingCaptureService()
+        let viewModel = RecordingViewModel(
+            permissionService: FakeAutoRecordingPermissionService(screen: true, mic: true),
+            captureService: captureService
+        )
+        await viewModel.checkPermissions()
+        let provider = DelayedMeetingApplicationProvider(applications: [
+            RunningApplicationSnapshot(
+                bundleIdentifier: "com.tencent.meeting",
+                localizedName: "腾讯会议",
+                windowTitles: ["会议中 - 生物课"],
+                canReadWindowMetadata: true
+            )
+        ])
+        let autoRecorder = MeetingAutoRecorder(provider: provider, endSuggestionMissThreshold: 2)
+
+        autoRecorder.startMonitoring(recordingViewModel: viewModel, intervalNanoseconds: 1_000_000)
+        await provider.waitUntilEntryCount(1)
+        autoRecorder.stopMonitoring()
+        await provider.releaseAll()
+        try? await Task.sleep(nanoseconds: 1_000_000)
+
+        XCTAssertEqual(captureService.startCallCount, 0)
+        XCTAssertEqual(viewModel.state, .ready)
+        XCTAssertEqual(autoRecorder.status, .monitoring)
+    }
+
+    func testStartMonitoringDoesNotCreateDuplicatePollingTasks() async {
+        let captureService = FakeAutoRecordingCaptureService()
+        let viewModel = RecordingViewModel(
+            permissionService: FakeAutoRecordingPermissionService(screen: true, mic: true),
+            captureService: captureService
+        )
+        await viewModel.checkPermissions()
+        let provider = DelayedMeetingApplicationProvider(applications: [])
+        let autoRecorder = MeetingAutoRecorder(provider: provider, endSuggestionMissThreshold: 2)
+
+        autoRecorder.startMonitoring(recordingViewModel: viewModel, intervalNanoseconds: 1_000_000)
+        autoRecorder.startMonitoring(recordingViewModel: viewModel, intervalNanoseconds: 1_000_000)
+        await provider.waitUntilEntryCount(1)
+        try? await Task.sleep(nanoseconds: 1_000_000)
+        let entryCount = await provider.entryCount
+        autoRecorder.stopMonitoring()
+        await provider.releaseAll()
+
+        XCTAssertEqual(entryCount, 1)
+        XCTAssertEqual(captureService.startCallCount, 0)
+    }
 }
 
 private final class FakeMeetingApplicationProvider: MeetingApplicationProviding, @unchecked Sendable {
@@ -272,6 +322,55 @@ private final class FakeMeetingApplicationProvider: MeetingApplicationProviding,
         let current = snapshots[min(index, snapshots.count - 1)]
         index += 1
         return current
+    }
+}
+
+private actor DelayedMeetingApplicationProvider: MeetingApplicationProviding {
+    private let applications: [RunningApplicationSnapshot]
+    private var runningContinuations: [CheckedContinuation<[RunningApplicationSnapshot], Never>] = []
+    private var entryContinuations: [(Int, CheckedContinuation<Void, Never>)] = []
+    private(set) var entryCount = 0
+
+    init(applications: [RunningApplicationSnapshot]) {
+        self.applications = applications
+    }
+
+    func runningApplications() async -> [RunningApplicationSnapshot] {
+        await withCheckedContinuation { continuation in
+            entryCount += 1
+            runningContinuations.append(continuation)
+            resumeSatisfiedEntryContinuations()
+        }
+    }
+
+    func waitUntilEntryCount(_ expectedEntryCount: Int) async {
+        if entryCount >= expectedEntryCount {
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            entryContinuations.append((expectedEntryCount, continuation))
+        }
+    }
+
+    func releaseAll() {
+        let continuations = runningContinuations
+        runningContinuations = []
+        continuations.forEach { continuation in
+            continuation.resume(returning: applications)
+        }
+    }
+
+    private func resumeSatisfiedEntryContinuations() {
+        let readyContinuations = entryContinuations.filter { expectedEntryCount, _ in
+            entryCount >= expectedEntryCount
+        }
+        entryContinuations.removeAll { expectedEntryCount, _ in
+            entryCount >= expectedEntryCount
+        }
+        readyContinuations.forEach { _, continuation in
+            continuation.resume()
+        }
     }
 }
 

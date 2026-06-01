@@ -13,9 +13,6 @@ struct RootView: View {
                     await recordingViewModel.checkPermissions()
                     meetingAutoRecorder.startMonitoring(recordingViewModel: recordingViewModel)
                 }
-                .onDisappear {
-                    meetingAutoRecorder.stopMonitoring()
-                }
         case .checking, .installing, .failed:
             RuntimeSetupView(viewModel: runtimeSetupViewModel)
                 .task {
