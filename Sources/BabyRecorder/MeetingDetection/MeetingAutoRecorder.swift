@@ -17,6 +17,7 @@ final class MeetingAutoRecorder {
     private let endSuggestionMissThreshold: Int
     private var autoStartedAppName: String?
     private var consecutiveMisses = 0
+    private var pollingTask: Task<Void, Never>?
 
     private(set) var status: MeetingAutoRecordingStatus = .monitoring
 
@@ -94,6 +95,31 @@ final class MeetingAutoRecorder {
             return
         }
         await recordingViewModel.stopRecording()
+        clearAutoStartedState()
+    }
+
+    func startMonitoring(
+        recordingViewModel: RecordingViewModel,
+        intervalNanoseconds: UInt64 = 5_000_000_000
+    ) {
+        guard pollingTask == nil else {
+            return
+        }
+
+        pollingTask = Task { @MainActor [weak self, weak recordingViewModel] in
+            while !Task.isCancelled {
+                guard let self, let recordingViewModel else {
+                    return
+                }
+                await self.tick(recordingViewModel: recordingViewModel)
+                try? await Task.sleep(nanoseconds: intervalNanoseconds)
+            }
+        }
+    }
+
+    func stopMonitoring() {
+        pollingTask?.cancel()
+        pollingTask = nil
         clearAutoStartedState()
     }
 

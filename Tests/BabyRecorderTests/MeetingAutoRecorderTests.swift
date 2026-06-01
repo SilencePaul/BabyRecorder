@@ -238,6 +238,23 @@ final class MeetingAutoRecorderTests: XCTestCase {
         XCTAssertEqual(viewModel.state, .failed("startFailed"))
         XCTAssertEqual(autoRecorder.status, .monitoring)
     }
+
+    func testPollingCanBeStartedAndStoppedWithoutStartingWhenNoMeetingExists() async {
+        let captureService = FakeAutoRecordingCaptureService()
+        let viewModel = RecordingViewModel(
+            permissionService: FakeAutoRecordingPermissionService(screen: true, mic: true),
+            captureService: captureService
+        )
+        await viewModel.checkPermissions()
+        let provider = FakeMeetingApplicationProvider(snapshots: [[]])
+        let autoRecorder = MeetingAutoRecorder(provider: provider, endSuggestionMissThreshold: 2)
+
+        autoRecorder.startMonitoring(recordingViewModel: viewModel, intervalNanoseconds: 1_000_000)
+        await Task.yield()
+        autoRecorder.stopMonitoring()
+
+        XCTAssertEqual(captureService.startCallCount, 0)
+    }
 }
 
 private final class FakeMeetingApplicationProvider: MeetingApplicationProviding, @unchecked Sendable {

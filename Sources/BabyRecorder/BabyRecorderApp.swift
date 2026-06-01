@@ -10,10 +10,15 @@ struct BabyRecorderApp: App {
         transcriptionService: PythonMLXTranscriptionService()
     )
     @State private var runtimeSetupViewModel = RuntimeSetupViewModel()
+    @State private var meetingAutoRecorder = MeetingAutoRecorder()
 
     var body: some Scene {
         Window("app.title", id: "main") {
-            RootView(recordingViewModel: viewModel, runtimeSetupViewModel: runtimeSetupViewModel)
+            RootView(
+                recordingViewModel: viewModel,
+                runtimeSetupViewModel: runtimeSetupViewModel,
+                meetingAutoRecorder: meetingAutoRecorder
+            )
                 .background(WindowCloseHider())
                 .onAppear {
                     appDelegate.viewModel = viewModel
